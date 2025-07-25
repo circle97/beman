@@ -1,0 +1,74 @@
+{
+  "elementStyling": {
+    "global": {
+      "colorPalette": {
+        "primary": "#2563EB",
+        "secondary": "#1E293B",
+        "accent": "#10B981",
+        "textPrimary": "#F8FAFC",
+        "textSecondary": "#94A3B8"
+      },
+      "gradients": {
+        "cardGradient": "linear-gradient(152deg, #1E293B 0%, #0F172A 100%)",
+        "buttonGradient": "linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%)"
+      }
+    },
+    "cards": {
+      "background": "$global.gradients.cardGradient",
+      "border": "#334155",
+      "radius": "8px",
+      "shadow": "0 4px 6px rgba(15, 23, 42, 0.5)",
+      "prohibitions": {
+        "cardGradientNonContainer": "禁止将卡片渐变应用于非容器元素"
+      }
+    },
+    "buttons": {
+      "primary": {
+        "background": "$global.gradients.buttonGradient",
+        "text": "#FFFFFF",
+        "border": "none",
+        "states": {
+          "hover": {
+            "background": "linear-gradient(180deg, #1D4ED8 0%, #1E40AF 100%)"
+          },
+          "active": {
+            "transform": "scale(0.98)"
+          }
+        }
+      },
+      "iconButton": {
+        "iconFill": "#10B981",
+        "background": "rgba(16, 185, 129, 0.1)",
+        "hover": {
+          "background": "rgba(16, 185, 129, 0.2)"
+        }
+      }
+    },
+    "typography": {
+      "h1": {
+        "color": "$global.colorPalette.textPrimary",
+        "contrastRatio": "4.5:1"
+      },
+      "body": {
+        "color": "$global.colorPalette.textSecondary",
+        "contrastRatio": "3:1"
+      }
+    },
+    "specialEffects": {
+      "pulse": {
+        "applyTo": ["achievementBadges", "pulseTarget"],
+        "params": "animation: pulse 2s infinite"
+      }
+    }
+  },
+  "rules": {
+    "gradientApplication": {
+      "cards": "仅限容器背景",
+      "buttons": "仅限主要按钮背景"
+    },
+    "colorProhibitions": [
+      "禁止在文本元素使用渐变填充",
+      "禁止在图标容器使用卡片边框色"
+    ]
+  }
+}
