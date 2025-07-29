@@ -18,25 +18,26 @@ export interface FinanceSummary {
   categories: Array<{name: string, amount: number, percentage: number}>;
 }
 
-export const getFinanceSummary = () => {
+export const getFinanceSummary = (period: string) => {
   return request<FinanceSummary>({
-    url: '/finance/summary',
-    method: 'get'
+    url: '/finance/bills/summary',
+    method: 'get',
+    params: { period }
   });
 };
 
 export const addBill = (data: BillRequest) => {
   return request({
-    url: '/finance/bill',
+    url: '/finance/bills',
     method: 'post',
     data
   });
 };
 
 export const getBills = (period: string) => {
-  return request<Array<any>>(
+  return request<Array<any>>({
     url: '/finance/bills',
     method: 'get',
     params: { period }
-  );
+  });
 };

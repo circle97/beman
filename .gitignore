@@ -1,0 +1,37 @@
+# Java backend
+backend/target/
+backend/.idea/
+backend/*.iml
+
+# Frontend
+front/node_modules/
+front/dist/
+front/.env.local
+front/.env.development.local
+front/.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python AI service
+ai/__pycache__/
+ai/*.pyc
+ai/*.pyo
+ai/*.pyd
+ai/env/
+ai/venv/
+
+# Logs
+logs/
+*.log
+
+# Misc
+*.bak
+*.tmp

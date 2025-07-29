@@ -1,8 +1,10 @@
 <template>
   <div class="finance-container">
-    <div class="card" :style="cardStyles">
+    <div class="card">
       <h1 class="title">{{ $t('finance.summaryTitle') }}</h1>
-      <FinanceSummary :data="summaryData" />
+      <div v-if="loading" class="loading">加载中...</div>
+      <div v-if="error" class="error">{{ error }}</div>
+      <FinanceSummary v-else :data="summaryData" />
       <BillForm @bill-added="fetchSummary" />
       <BillList :bills="bills" />
     </div>
@@ -19,17 +21,21 @@ import BillList from '@/components/finance/BillList.vue';
 const financeStore = useFinanceStore();
 const summaryData = ref<any>(null);
 const bills = ref<any[]>([]);
-
-const cardStyles = {
-  background: 'var(--card-gradient)',
-  border: '1px solid var(--card-border)',
-  borderRadius: '8px',
-  boxShadow: '0 4px 6px rgba(15, 23, 42, 0.5)'
-};
+const loading = ref(true);
+const error = ref('');
 
 const fetchSummary = async () => {
-  summaryData.value = await financeStore.getSummary();
-  bills.value = await financeStore.getBills('month');
+  try {
+    loading.value = true;
+    summaryData.value = await financeStore.getSummary('month');
+    bills.value = await financeStore.getBills('month');
+    error.value = '';
+  } catch (err) {
+    error.value = '数据加载失败，请重试';
+    console.error('加载财务数据失败:', err);
+  } finally {
+    loading.value = false;
+  }
 };
 
 onMounted(() => {
@@ -45,5 +51,17 @@ onMounted(() => {
 .title {
   color: var(--text-primary);
   margin-bottom: 20px;
+}
+
+.loading {
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 40px;
+}
+
+.error {
+  color: #ef4444;
+  text-align: center;
+  padding: 40px;
 }
 </style>
