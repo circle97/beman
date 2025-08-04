@@ -6,8 +6,32 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      redirect: '/finance'
+    },
+    {
+      path: '/finance',
       name: 'finance',
       component: FinanceView
+    },
+    {
+      path: '/community',
+      name: 'community',
+      component: () => import('../views/CommunityView.vue')
+    },
+    {
+      path: '/schedule',
+      name: 'schedule',
+      component: () => import('../views/ScheduleView.vue')
+    },
+    {
+      path: '/emotion',
+      name: 'emotion',
+      component: () => import('../views/EmotionView.vue')
+    },
+    {
+      path: '/communication',
+      name: 'communication',
+      component: () => import('../views/CommunicationView.vue')
     },
     // 添加404路由
     {
