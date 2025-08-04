@@ -2,6 +2,7 @@ package com.beman.user;
 
 import com.beman.common.ApiResponse;
 import com.beman.user.dto.LoginRequest;
+import com.beman.user.dto.LoginResponse;
 import com.beman.user.dto.RegisterRequest;
 import com.beman.user.dto.UserResponse;
 import io.swagger.annotations.Api;
@@ -37,6 +38,6 @@ public class AuthController {
     @ApiOperation("用户登出")
     public ApiResponse<Void> logout() {
         authService.logout();
-        return ApiResponse.success();
+        return ApiResponse.success(null);
     }
 }

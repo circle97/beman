@@ -1,7 +1,7 @@
 <template>
   <div class="finance-container">
     <div class="card">
-      <h1 class="title">{{ $t('finance.summaryTitle') }}</h1>
+      <h1 class="title">{{ $t ? $t('finance.summaryTitle') : '财务概览' }}</h1>
       <div v-if="loading" class="loading">加载中...</div>
       <div v-if="error" class="error">{{ error }}</div>
       <FinanceSummary v-else :data="summaryData" />
@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useFinanceStore } from '@/stores/finance';
+import { useFinanceStore } from '@/stores/finance'; // 确认路径正确
 import FinanceSummary from '@/components/finance/FinanceSummary.vue';
 import BillForm from '@/components/finance/BillForm.vue';
 import BillList from '@/components/finance/BillList.vue';

@@ -1,5 +1,6 @@
 package com.beman.common;
 
+
 import lombok.Getter;
 
 @Getter

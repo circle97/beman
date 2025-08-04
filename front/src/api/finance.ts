@@ -1,4 +1,4 @@
-import request from '@/utils/request';
+import request from '@/utils/request'; // 修复后的导入格式
 
 export interface BillRequest {
   description: string;
