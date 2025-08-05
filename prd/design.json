@@ -1,0 +1,173 @@
+{
+    "elementStyling": {
+      "cards": {
+        "selector": ".card, .beman-card",
+        "background": "linear-gradient(135deg, #23272F 0%, #2C333A 100%)",
+        "border": {
+          "color": "#31363F",
+          "width": "1px",
+          "style": "solid"
+        },
+        "shadow": "0 4px 16px rgba(0,0,0,0.18)",
+        "radius": "16px",
+        "contentText": {
+          "color": "#F5F6FA",
+          "secondaryColor": "#A3A8B3"
+        },
+        "icons": {
+          "fill": "#4ECDC4",
+          "background": "none"
+        },
+        "hover": {
+          "background": "linear-gradient(135deg, #2C333A 0%, #23272F 100%)",
+          "shadow": "0 8px 24px rgba(0,0,0,0.22)"
+        },
+        "forbidden": [
+          "禁止将卡片渐变应用于图标或按钮",
+          "禁止将卡片阴影用于内容区"
+        ]
+      },
+      "buttons": {
+        "primary": {
+          "selector": ".btn-primary, .beman-btn-primary",
+          "background": "linear-gradient(90deg, #007AFF 0%, #4ECDC4 100%)",
+          "text": "#FFFFFF",
+          "icon": "#FFFFFF",
+          "radius": "8px",
+          "shadow": "0 2px 8px rgba(0,122,255,0.18)",
+          "hover": {
+            "background": "linear-gradient(90deg, #0056CC 0%, #38B2AC 100%)",
+            "shadow": "0 4px 16px rgba(0,122,255,0.22)"
+          },
+          "active": {
+            "background": "#0056CC"
+          },
+          "disabled": {
+            "background": "#31363F",
+            "text": "#A3A8B3"
+          },
+          "focus": {
+            "outline": "2px solid #4ECDC4"
+          },
+          "forbidden": [
+            "禁止将主按钮渐变用于文本或卡片背景"
+          ]
+        },
+        "secondary": {
+          "selector": ".btn-secondary, .beman-btn-secondary",
+          "background": "#23272F",
+          "text": "#4ECDC4",
+          "icon": "#4ECDC4",
+          "border": "#4ECDC4",
+          "radius": "8px",
+          "hover": {
+            "background": "#31363F"
+          },
+          "active": {
+            "background": "#23272F",
+            "border": "#38B2AC"
+          },
+          "disabled": {
+            "background": "#23272F",
+            "text": "#A3A8B3",
+            "border": "#31363F"
+          },
+          "forbidden": [
+            "禁止将次按钮颜色用于主按钮或卡片"
+          ]
+        }
+      },
+      "icons": {
+        "default": {
+          "selector": ".icon, .beman-icon",
+          "fill": "#4ECDC4",
+          "background": "none"
+        },
+        "container": {
+          "selector": ".icon-container, .beman-icon-container",
+          "background": "#23272F",
+          "radius": "50%",
+          "shadow": "0 2px 8px rgba(78,205,196,0.08)"
+        },
+        "forbidden": [
+          "禁止将卡片渐变或按钮渐变用于图标",
+          "禁止将图标填充色用于文本"
+        ]
+      },
+      "text": {
+        "primary": {
+          "selector": ".text-primary, .beman-text-primary",
+          "color": "#F5F6FA",
+          "contrastRatio": "12.8:1"
+        },
+        "secondary": {
+          "selector": ".text-secondary, .beman-text-secondary",
+          "color": "#A3A8B3",
+          "contrastRatio": "7.2:1"
+        },
+        "disabled": {
+          "selector": ".text-disabled, .beman-text-disabled",
+          "color": "#5A5F6B"
+        },
+        "inverse": {
+          "selector": ".text-inverse, .beman-text-inverse",
+          "color": "#23272F"
+        },
+        "forbidden": [
+          "禁止将主按钮文本色用于普通文本",
+          "禁止将卡片内容色用于按钮"
+        ]
+      },
+      "backgrounds": {
+        "app": {
+          "selector": "body, .app-bg",
+          "background": "linear-gradient(120deg, #181C22 0%, #23272F 100%)"
+        },
+        "section": {
+          "selector": ".section-bg, .beman-section",
+          "background": "#23272F"
+        }
+      },
+      "shadows": {
+        "card": {
+          "selector": ".card, .beman-card",
+          "shadow": "0 4px 16px rgba(0,0,0,0.18)"
+        },
+        "button": {
+          "selector": ".btn-primary, .beman-btn-primary",
+          "shadow": "0 2px 8px rgba(0,122,255,0.18)"
+        }
+      },
+      "radius": {
+        "card": {
+          "selector": ".card, .beman-card",
+          "radius": "16px"
+        },
+        "button": {
+          "selector": ".btn, .beman-btn",
+          "radius": "8px"
+        },
+        "icon": {
+          "selector": ".icon-container, .beman-icon-container",
+          "radius": "50%"
+        }
+      },
+      "animations": {
+        "buttonHover": {
+          "selector": ".btn:hover, .beman-btn:hover",
+          "transition": "background 0.2s, box-shadow 0.2s"
+        },
+        "cardHover": {
+          "selector": ".card:hover, .beman-card:hover",
+          "transition": "background 0.2s, box-shadow 0.2s"
+        }
+      }
+    },
+    "forbiddenRules": [
+      "禁止将卡片背景渐变应用于图标、按钮或文本",
+      "禁止将主按钮渐变色用于普通文本或卡片",
+      "禁止将图标填充色用于卡片或按钮背景",
+      "禁止将任何阴影应用于文本内容",
+      "禁止将圆角参数混用于不同类型组件"
+    ]
+  }
