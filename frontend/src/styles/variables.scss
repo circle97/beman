@@ -1,0 +1,83 @@
+// BEMAN 设计系统变量
+// 严格按照 design.json 规范
+
+// 颜色系统
+$color-primary: #007AFF;
+$color-primary-hover: #0056CC;
+$color-secondary: #4ECDC4;
+$color-secondary-hover: #38B2AC;
+
+// 背景色
+$bg-app: linear-gradient(120deg, #181C22 0%, #23272F 100%);
+$bg-section: #23272F;
+$bg-card: linear-gradient(135deg, #23272F 0%, #2C333A 100%);
+$bg-card-hover: linear-gradient(135deg, #2C333A 0%, #23272F 100%);
+$bg-button-primary: linear-gradient(90deg, #007AFF 0%, #4ECDC4 100%);
+$bg-button-primary-hover: linear-gradient(90deg, #0056CC 0%, #38B2AC 100%);
+$bg-button-secondary: #23272F;
+$bg-button-secondary-hover: #31363F;
+$bg-icon-container: #23272F;
+
+// 边框色
+$border-card: #31363F;
+$border-button-secondary: #4ECDC4;
+
+// 文字色
+$text-primary: #F5F6FA;
+$text-secondary: #A3A8B3;
+$text-disabled: #5A5F6B;
+$text-inverse: #23272F;
+$text-button-primary: #FFFFFF;
+$text-button-secondary: #4ECDC4;
+
+// 图标色
+$icon-default: #4ECDC4;
+$icon-button-primary: #FFFFFF;
+$icon-button-secondary: #4ECDC4;
+
+// 阴影
+$shadow-card: 0 4px 16px rgba(0,0,0,0.18);
+$shadow-card-hover: 0 8px 24px rgba(0,0,0,0.22);
+$shadow-button-primary: 0 2px 8px rgba(0,122,255,0.18);
+$shadow-button-primary-hover: 0 4px 16px rgba(0,122,255,0.22);
+$shadow-icon-container: 0 2px 8px rgba(78,205,196,0.08);
+
+// 圆角
+$radius-card: 16px;
+$radius-button: 8px;
+$radius-icon-container: 50%;
+
+// 动画
+$transition-button: background 0.2s, box-shadow 0.2s;
+$transition-card: background 0.2s, box-shadow 0.2s;
+
+// 对比度
+$contrast-primary: 12.8;
+$contrast-secondary: 7.2;
+
+// 间距
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+
+// 字体大小
+$font-size-xs: 12px;
+$font-size-sm: 14px;
+$font-size-md: 16px;
+$font-size-lg: 18px;
+$font-size-xl: 20px;
+$font-size-xxl: 24px;
+
+// 字体权重
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// 断点
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px; 
