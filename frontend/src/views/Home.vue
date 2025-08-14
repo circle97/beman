@@ -30,6 +30,128 @@
       </div>
     </div>
 
+    <!-- 财务概览 -->
+    <div class="finance-overview">
+      <h2 class="section-title">财务概览</h2>
+      <div class="finance-grid">
+        <BemanCard class="finance-card">
+          <div class="finance-item">
+            <div class="finance-icon income">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              </svg>
+            </div>
+            <div class="finance-content">
+              <div class="finance-label">本月收入</div>
+              <div class="finance-amount income">¥{{ formatAmount(financeStats.monthIncome) }}</div>
+            </div>
+          </div>
+        </BemanCard>
+        
+        <BemanCard class="finance-card">
+          <div class="finance-item">
+            <div class="finance-icon expense">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 13H5v-2h14v2z"/>
+              </svg>
+            </div>
+            <div class="finance-content">
+              <div class="finance-label">本月支出</div>
+              <div class="finance-amount expense">¥{{ formatAmount(financeStats.monthExpense) }}</div>
+            </div>
+          </div>
+        </BemanCard>
+        
+        <BemanCard class="finance-card">
+          <div class="finance-item">
+            <div class="finance-icon balance">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              </svg>
+            </div>
+            <div class="finance-content">
+              <div class="finance-label">本月结余</div>
+              <div class="finance-amount" :class="financeStats.monthBalance >= 0 ? 'income' : 'expense'">
+                ¥{{ formatAmount(financeStats.monthBalance) }}
+              </div>
+            </div>
+          </div>
+        </BemanCard>
+      </div>
+    </div>
+
+    <!-- 快速记账 -->
+    <div class="quick-accounting">
+      <h2 class="section-title">快速记账</h2>
+      <BemanCard>
+        <div class="accounting-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>类型</label>
+              <div class="type-buttons">
+                <button 
+                  class="type-btn" 
+                  :class="{ 'active': newTransaction.type === 1 }"
+                  @click="newTransaction.type = 1"
+                >
+                  收入
+                </button>
+                <button 
+                  class="type-btn" 
+                  :class="{ 'active': newTransaction.type === 2 }"
+                  @click="newTransaction.type = 2"
+                >
+                  支出
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>金额</label>
+              <input 
+                v-model="newTransaction.amount" 
+                type="number" 
+                placeholder="0.00" 
+                class="amount-input"
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>分类</label>
+              <select v-model="newTransaction.categoryId" class="category-select">
+                <option value="">请选择分类</option>
+                <option 
+                  v-for="category in categories" 
+                  :key="category.id" 
+                  :value="category.id"
+                >
+                  {{ category.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>描述</label>
+              <input 
+                v-model="newTransaction.description" 
+                type="text" 
+                placeholder="请输入描述" 
+                class="description-input"
+              />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button 
+              class="btn-primary" 
+              @click="submitTransaction"
+              :disabled="!canSubmit"
+            >
+              记录
+            </button>
+          </div>
+        </div>
+      </BemanCard>
+    </div>
+
     <!-- 今日任务 -->
     <div class="daily-tasks">
       <h2 class="section-title">今日任务</h2>
@@ -85,6 +207,7 @@ import { ref, computed, onMounted, h } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import BemanCard from '../components/BemanCard.vue'
+import { getFinanceStats, getUserCategories, createTransaction, type FinanceStats, type Category, type TransactionCreateDTO } from '../api/finance'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -155,6 +278,42 @@ const stats = ref({
   streakDays: 7
 })
 
+// 财务数据
+const financeStats = ref<FinanceStats>({
+  monthIncome: 0,
+  monthExpense: 0,
+  monthBalance: 0,
+  yearIncome: 0,
+  yearExpense: 0,
+  yearBalance: 0,
+  totalAssets: 0,
+  totalLiabilities: 0,
+  netWorth: 0,
+  expenseCategoryStats: [],
+  incomeCategoryStats: [],
+  weeklyExpenseTrend: [],
+  weeklyIncomeTrend: [],
+  paymentMethodStats: []
+})
+
+// 分类列表
+const categories = ref<Category[]>([])
+
+// 新交易记录
+const newTransaction = ref<TransactionCreateDTO>({
+  type: 2, // 默认支出
+  amount: 0,
+  categoryId: 0,
+  description: ''
+})
+
+// 是否可以提交
+const canSubmit = computed(() => {
+  return newTransaction.value.amount > 0 && 
+         newTransaction.value.categoryId > 0 && 
+         newTransaction.value.description.trim()
+})
+
 // 处理操作点击
 const handleActionClick = (action: any) => {
   router.push(action.path)
@@ -164,6 +323,51 @@ const handleActionClick = (action: any) => {
 const toggleTask = (task: any) => {
   task.completed = !task.completed
   // 这里可以调用API更新任务状态
+}
+
+// 格式化金额
+const formatAmount = (amount: number) => {
+  return amount.toFixed(2)
+}
+
+// 加载财务数据
+const loadFinanceData = async () => {
+  try {
+    const stats = await getFinanceStats()
+    financeStats.value = stats
+  } catch (error) {
+    console.error('加载财务数据失败:', error)
+  }
+}
+
+// 加载分类数据
+const loadCategories = async () => {
+  try {
+    const categoryList = await getUserCategories(2) // 默认加载支出分类
+    categories.value = categoryList
+  } catch (error) {
+    console.error('加载分类数据失败:', error)
+  }
+}
+
+// 提交交易记录
+const submitTransaction = async () => {
+  try {
+    await createTransaction(newTransaction.value)
+    // 重置表单
+    newTransaction.value = {
+      type: 2,
+      amount: 0,
+      categoryId: 0,
+      description: ''
+    }
+    // 重新加载财务数据
+    await loadFinanceData()
+    alert('记录成功！')
+  } catch (error) {
+    console.error('记录失败:', error)
+    alert('记录失败，请重试')
+  }
 }
 
 // 图标组件
@@ -185,6 +389,8 @@ const CommunityIcon = () => h('svg', { viewBox: '0 0 24 24', fill: 'currentColor
 
 onMounted(() => {
   // 页面加载时的初始化逻辑
+  loadFinanceData()
+  loadCategories()
 })
 </script>
 
@@ -265,6 +471,147 @@ onMounted(() => {
   font-size: $font-size-sm;
   color: $text-secondary;
   margin: 0;
+}
+
+// 财务概览样式
+.finance-overview {
+  margin-bottom: $spacing-xl;
+}
+
+.finance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: $spacing-md;
+}
+
+.finance-card {
+  .finance-item {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+  }
+}
+
+.finance-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  
+  &.income {
+    background: #4caf50;
+  }
+  
+  &.expense {
+    background: #f44336;
+  }
+  
+  &.balance {
+    background: #2196f3;
+  }
+  
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.finance-content {
+  flex: 1;
+}
+
+.finance-label {
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  margin-bottom: $spacing-xs;
+}
+
+.finance-amount {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  
+  &.income {
+    color: #4caf50;
+  }
+  
+  &.expense {
+    color: #f44336;
+  }
+}
+
+// 快速记账样式
+.quick-accounting {
+  margin-bottom: $spacing-xl;
+}
+
+.accounting-form {
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $spacing-md;
+    margin-bottom: $spacing-md;
+    
+    @media (max-width: $breakpoint-sm) {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+.form-group {
+  label {
+    display: block;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $text-primary;
+    margin-bottom: $spacing-xs;
+  }
+}
+
+.type-buttons {
+  display: flex;
+  gap: $spacing-xs;
+}
+
+.type-btn {
+  flex: 1;
+  padding: $spacing-sm;
+  border: 1px solid $border-card;
+  border-radius: $radius-button;
+  background: $bg-section;
+  color: $text-secondary;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &.active {
+    background: $color-secondary;
+    color: white;
+    border-color: $color-secondary;
+  }
+}
+
+.amount-input,
+.category-select,
+.description-input {
+  width: 100%;
+  padding: $spacing-sm;
+  border: 1px solid $border-card;
+  border-radius: $radius-button;
+  background: $bg-section;
+  color: $text-primary;
+  font-size: $font-size-md;
+  
+  &:focus {
+    outline: none;
+    border-color: $color-secondary;
+  }
+}
+
+.form-actions {
+  text-align: center;
+  margin-top: $spacing-lg;
 }
 
 .daily-tasks {
@@ -368,6 +715,10 @@ onMounted(() => {
   }
   
   .action-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .finance-grid {
     grid-template-columns: 1fr;
   }
   

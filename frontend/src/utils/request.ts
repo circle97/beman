@@ -14,12 +14,12 @@ const request: AxiosInstance = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config: AxiosRequestConfig) => {
-    // 添加token到请求头
+    // 使用后端 Sa-Token 配置的 token 名称（beman-token）传递令牌
     const userStore = useUserStore()
     if (userStore.token) {
       config.headers = {
         ...config.headers,
-        'Authorization': `Bearer ${userStore.token}`
+        'beman-token': userStore.token
       }
     }
     return config

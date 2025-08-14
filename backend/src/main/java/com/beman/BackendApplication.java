@@ -1,4 +1,4 @@
-package com.beman.backend;
+package com.beman;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

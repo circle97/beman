@@ -100,7 +100,7 @@ public class UserController {
     public Result<Void> logout() {
         try {
             StpUtil.logout();
-            return Result.success("登出成功");
+            return Result.success();
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

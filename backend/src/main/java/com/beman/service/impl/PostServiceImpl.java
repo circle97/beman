@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -203,6 +204,6 @@ public class PostServiceImpl implements PostService {
     public List<String> getHotTags() {
         // TODO: 实现热门标签查询
         // 这里返回一些预设的热门标签
-        return List.of("挽回经验", "冷战化解", "沟通技巧", "自我提升", "关系经营", "情绪管理");
+        return Arrays.asList("挽回经验", "冷战化解", "沟通技巧", "自我提升", "关系经营", "情绪管理");
     }
 }

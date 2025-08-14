@@ -65,7 +65,7 @@
         <div class="post-header">
           <div class="post-author">
             <div class="author-avatar">
-              <img v-if="post.avatar" :src="post.avatar" :alt="post.authorName">
+              <img v-if="post.authorAvatar" :src="post.authorAvatar" :alt="post.authorName">
               <div v-else class="avatar-placeholder">
                 {{ post.authorName?.charAt(0) || '匿' }}
               </div>
@@ -171,7 +171,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import BemanCard from '../components/BemanCard.vue'
-import { createPost, getPostPage, likePost, getHotTags, type Post, type PostCreateDTO } from '../api/post'
+import { createPost, getPostPage, likePost as likePostApi, getHotTags, type Post, type PostCreateDTO } from '../api/post'
 
 // 响应式数据
 const loading = ref(false)
@@ -196,12 +196,12 @@ const newPost = ref<PostCreateDTO>({
 const loadPosts = async () => {
   loading.value = true
   try {
-    const result = await getPostPage({
+    const pageResult = await getPostPage({
       page: 1,
       size: 20,
       tags: selectedTags.value.length > 0 ? selectedTags.value : undefined
     })
-    posts.value = result.records
+    posts.value = pageResult.records
   } catch (error) {
     console.error('加载帖子失败:', error)
   } finally {
@@ -236,7 +236,7 @@ const viewPost = (post: any) => {
 
 const likePost = async (post: Post) => {
   try {
-    await likePost(post.id)
+    await likePostApi(post.id)
     post.likeCount++
   } catch (error) {
     console.error('点赞失败:', error)
@@ -296,6 +296,7 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@use 'sass:color';
 @import '../styles/variables.scss';
 
 .community-page {
@@ -353,7 +354,7 @@ onMounted(() => {
   transition: all 0.2s;
   
   &:hover {
-    background: darken($color-secondary, 10%);
+    background: color.adjust($color-secondary, $lightness: -10%);
   }
   
   svg {

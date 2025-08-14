@@ -68,7 +68,7 @@ public class PostController {
      * 点赞帖子
      */
     @PostMapping("/{id}/like")
-    public Result<Void> likePost(@PathVariable Long id) {
+    public Result<String> likePost(@PathVariable Long id) {
         try {
             postService.likePost(id);
             return Result.success("点赞成功");
@@ -81,7 +81,7 @@ public class PostController {
      * 取消点赞
      */
     @DeleteMapping("/{id}/like")
-    public Result<Void> unlikePost(@PathVariable Long id) {
+    public Result<String> unlikePost(@PathVariable Long id) {
         try {
             postService.unlikePost(id);
             return Result.success("取消点赞成功");
@@ -94,7 +94,7 @@ public class PostController {
      * 删除帖子
      */
     @DeleteMapping("/{id}")
-    public Result<Void> deletePost(@PathVariable Long id) {
+    public Result<String> deletePost(@PathVariable Long id) {
         try {
             postService.deletePost(id);
             return Result.success("删除成功");
