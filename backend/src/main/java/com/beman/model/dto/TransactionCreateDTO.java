@@ -1,5 +1,6 @@
 package com.beman.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import javax.validation.constraints.DecimalMin;
@@ -42,6 +43,7 @@ public class TransactionCreateDTO {
     /**
      * 交易日期
      */
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime transactionDate;
 
     /**
