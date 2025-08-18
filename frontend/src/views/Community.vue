@@ -126,7 +126,50 @@
           </div>
           <div class="form-group">
             <label>内容</label>
-            <textarea v-model="newPost.content" placeholder="分享你的经验和想法..." rows="6"></textarea>
+            <textarea 
+              v-model="newPost.content" 
+              placeholder="分享你的经验和想法..." 
+              rows="6"
+              @input="onContentInput"
+            ></textarea>
+            
+            <!-- 内容审核状态显示 -->
+            <div v-if="auditResult" class="audit-status">
+              <div v-if="auditResult.isExtreme" class="audit-warning">
+                <div class="warning-header">
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                  <span>检测到极端内容</span>
+                </div>
+                <div class="warning-content">
+                  <p class="suggestion">{{ auditResult.suggestion }}</p>
+                  <div class="risk-level">
+                    风险等级: 
+                    <span :class="getRiskLevelClass(auditResult.riskLevel)">
+                      {{ getRiskLevelText(auditResult.riskLevel) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div v-else-if="auditResult.riskLevel === 1" class="audit-notice">
+                <div class="notice-header">
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                  <span>内容需要关注</span>
+                </div>
+                <p class="suggestion">{{ auditResult.suggestion }}</p>
+              </div>
+              <div v-else class="audit-success">
+                <div class="success-header">
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                  <span>内容审核通过</span>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="form-group">
             <label>标签</label>
@@ -172,6 +215,7 @@
 import { ref, onMounted } from 'vue'
 import BemanCard from '../components/BemanCard.vue'
 import { createPost, getPostPage, likePost as likePostApi, getHotTags, type Post, type PostCreateDTO } from '../api/post'
+import { auditAPI } from '../api/audit'
 
 // 响应式数据
 const loading = ref(false)
@@ -189,6 +233,10 @@ const newPost = ref<PostCreateDTO>({
   tags: [],
   isAnonymous: false
 })
+
+// 内容审核相关
+const auditResult = ref<any>(null)
+const isAuditing = ref(false)
 
 
 
@@ -271,17 +319,66 @@ const removeNewPostTag = (tag: string) => {
   }
 }
 
+// 内容审核相关方法
+const onContentInput = async () => {
+  const content = newPost.value.content.trim()
+  if (content.length < 10) {
+    auditResult.value = null
+    return
+  }
+  
+  // 防抖处理，避免频繁调用API
+  if (isAuditing.value) return
+  
+  isAuditing.value = true
+  try {
+    const result = await auditAPI.checkExtremeContent(content)
+    if (result.success) {
+      auditResult.value = result.data
+    }
+  } catch (error) {
+    console.error('内容审核失败:', error)
+  } finally {
+    isAuditing.value = false
+  }
+}
+
+const getRiskLevelClass = (riskLevel: number) => {
+  switch (riskLevel) {
+    case 0: return 'risk-low'
+    case 1: return 'risk-medium'
+    case 2: return 'risk-high'
+    default: return 'risk-unknown'
+  }
+}
+
+const getRiskLevelText = (riskLevel: number) => {
+  switch (riskLevel) {
+    case 0: return '低风险'
+    case 1: return '中风险'
+    case 2: return '高风险'
+    default: return '未知'
+  }
+}
+
 const submitPost = async () => {
+  // 检查内容是否通过审核
+  if (auditResult.value && auditResult.value.isExtreme) {
+    alert('内容包含极端信息，请修改后重新发布')
+    return
+  }
+  
   try {
     await createPost(newPost.value)
     showPostModal.value = false
-    // 重置表单
+    // 重置表单和审核结果
     newPost.value = {
       title: '',
       content: '',
       tags: [],
       isAnonymous: false
     }
+    auditResult.value = null
     // 重新加载帖子列表
     await loadPosts()
   } catch (error) {
@@ -298,6 +395,99 @@ onMounted(() => {
 <style lang="scss" scoped>
 @use 'sass:color';
 @import '../styles/variables.scss';
+
+// 内容审核样式
+.audit-status {
+  margin-top: $spacing-sm;
+  padding: $spacing-sm;
+  border-radius: $border-radius-sm;
+  font-size: $font-size-sm;
+  
+  .audit-warning {
+    background: rgba($color-warning, 0.1);
+    border: 1px solid rgba($color-warning, 0.3);
+    color: $color-warning;
+    
+    .warning-header {
+      display: flex;
+      align-items: center;
+      gap: $spacing-xs;
+      font-weight: $font-weight-medium;
+      margin-bottom: $spacing-xs;
+      
+      svg {
+        color: $color-warning;
+      }
+    }
+    
+    .warning-content {
+      .suggestion {
+        margin: $spacing-xs 0;
+        font-style: italic;
+      }
+      
+      .risk-level {
+        font-size: $font-size-xs;
+        opacity: 0.8;
+        
+        .risk-high {
+          color: $color-danger;
+          font-weight: $font-weight-medium;
+        }
+        
+        .risk-medium {
+          color: $color-warning;
+          font-weight: $font-weight-medium;
+        }
+        
+        .risk-low {
+          color: $color-success;
+          font-weight: $font-weight-medium;
+        }
+      }
+    }
+  }
+  
+  .audit-notice {
+    background: rgba($color-info, 0.1);
+    border: 1px solid rgba($color-info, 0.3);
+    color: $color-info;
+    
+    .notice-header {
+      display: flex;
+      align-items: center;
+      gap: $spacing-xs;
+      font-weight: $font-weight-medium;
+      margin-bottom: $spacing-xs;
+      
+      svg {
+        color: $color-info;
+      }
+    }
+    
+    .suggestion {
+      margin: $spacing-xs 0;
+      font-style: italic;
+    }
+  }
+  
+  .audit-success {
+    background: rgba($color-success, 0.1);
+    border: 1px solid rgba($color-success, 0.3);
+    color: $color-success;
+    
+    .success-header {
+      display: flex;
+      align-items: center;
+      gap: $spacing-xs;
+      font-weight: $font-weight-medium;
+      
+      svg {
+        color: $color-success;
+      }
+    }
+  }
+}
 
 .community-page {
   padding: $spacing-md;

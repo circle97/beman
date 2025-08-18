@@ -72,6 +72,13 @@ const routes: RouteRecordRaw[] = [
     name: 'Communication',
     component: () => import('../views/tools/Communication.vue'),
     meta: { title: '沟通沙盒' }
+  },
+  // 测试页面
+  {
+    path: '/test-audit',
+    name: 'TestAudit',
+    component: () => import('../views/TestAudit.vue'),
+    meta: { title: '内容审核测试' }
   }
 ]
 
