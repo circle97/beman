@@ -56,7 +56,28 @@
           </svg>
           手动记账
         </button>
+        
+        <!-- 账单同步 -->
+        <div class="bill-sync">
+          <button class="btn-secondary" @click="showSyncModal = true">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            </svg>
+            账单同步
+          </button>
+          <button class="btn-secondary" @click="exportTransactions">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            </svg>
+            导出数据
+          </button>
+        </div>
       </div>
+    </div>
+
+    <!-- 共同账户看板 -->
+    <div class="dashboard-section">
+      <SharedAccountDashboard />
     </div>
 
     <!-- 交易记录列表 -->
@@ -192,6 +213,72 @@
         </div>
       </div>
     </div>
+
+    <!-- 账单同步模态框 -->
+    <div v-if="showSyncModal" class="modal-overlay" @click="showSyncModal = false">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>账单同步</h3>
+          <button class="close-btn" @click="showSyncModal = false">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="sync-section">
+            <h4>导入账单</h4>
+            <p>支持从CSV、Excel文件导入账单数据</p>
+            
+            <div class="file-upload">
+              <input 
+                ref="fileInput"
+                type="file" 
+                accept=".csv,.xlsx,.xls"
+                @change="handleFileUpload"
+                style="display: none"
+              />
+              <button class="btn-primary" @click="$refs.fileInput.click()">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+                选择文件
+              </button>
+              <span v-if="selectedFile" class="selected-file">{{ selectedFile.name }}</span>
+            </div>
+            
+            <div v-if="importResult" class="import-result" :class="importResult.success ? 'success' : 'error'">
+              <p>{{ importResult.message }}</p>
+              <div v-if="importResult.errors.length > 0" class="error-details">
+                <p>错误详情：</p>
+                <ul>
+                  <li v-for="error in importResult.errors" :key="error">{{ error }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <div class="sync-section">
+            <h4>CSV模板</h4>
+            <p>下载CSV模板，按照格式填写后导入</p>
+            <button class="btn-secondary" @click="downloadTemplate">
+              下载模板
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" @click="showSyncModal = false">关闭</button>
+          <button 
+            v-if="selectedFile" 
+            class="btn-primary" 
+            @click="importFile"
+            :disabled="importing"
+          >
+            {{ importing ? '导入中...' : '开始导入' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -208,14 +295,21 @@ import {
   type FinanceStats,
   type Category
 } from '../../api/finance'
+import { voiceRecognitionService, type ParsedTransaction } from '../../services/voiceRecognition'
+import { billSyncService, type BillImportResult } from '../../services/billSync'
+import SharedAccountDashboard from '../../components/SharedAccountDashboard.vue'
 
 // 响应式数据
 const loading = ref(false)
 const showRecordModal = ref(false)
+const showSyncModal = ref(false)
 const isRecording = ref(false)
 const voiceText = ref('')
 const transactions = ref<Transaction[]>([])
 const categories = ref<Category[]>([])
+const selectedFile = ref<File | null>(null)
+const importResult = ref<BillImportResult | null>(null)
+const importing = ref(false)
 const stats = ref<FinanceStats>({
   monthIncome: 0,
   monthExpense: 0,
@@ -287,42 +381,68 @@ const loadCategories = async () => {
   }
 }
 
-const toggleVoiceRecord = () => {
+const toggleVoiceRecord = async () => {
   if (isRecording.value) {
-    stopVoiceRecord()
+    await stopVoiceRecord()
   } else {
-    startVoiceRecord()
+    await startVoiceRecord()
   }
 }
 
-const startVoiceRecord = () => {
-  isRecording.value = true
-  voiceText.value = ''
-  // TODO: 实现语音录制功能
-  // 这里先模拟语音识别结果
-  setTimeout(() => {
-    voiceText.value = '昨天买花200元'
+const startVoiceRecord = async () => {
+  try {
+    isRecording.value = true
+    voiceText.value = ''
+    await voiceRecognitionService.startRecording()
+  } catch (error) {
+    console.error('启动语音录制失败:', error)
+    alert(error instanceof Error ? error.message : '启动语音录制失败')
     isRecording.value = false
-  }, 2000)
+  }
 }
 
-const stopVoiceRecord = () => {
-  isRecording.value = false
-  // TODO: 停止语音录制
+const stopVoiceRecord = async () => {
+  try {
+    const result = await voiceRecognitionService.stopRecording()
+    voiceText.value = result.text
+    isRecording.value = false
+  } catch (error) {
+    console.error('停止语音录制失败:', error)
+    alert(error instanceof Error ? error.message : '停止语音录制失败')
+    isRecording.value = false
+  }
 }
 
 const parseVoiceText = () => {
-  // TODO: 实现语音文本解析
-  // 这里先简单处理
-  const text = voiceText.value
-  const amountMatch = text.match(/(\d+(?:\.\d+)?)/)
-  if (amountMatch) {
-    newTransaction.value.amount = parseFloat(amountMatch[1])
-    newTransaction.value.description = text
-    newTransaction.value.type = 2 // 默认为支出
+  try {
+    const parsed = voiceRecognitionService.parseTransactionText(voiceText.value)
+    
+    // 填充交易表单
+    newTransaction.value.amount = parsed.amount
+    newTransaction.value.description = parsed.description
+    newTransaction.value.type = parsed.type === 'income' ? 1 : 2
+    
+    // 如果有识别到分类，尝试匹配到对应的分类ID
+    if (parsed.category) {
+      const matchedCategory = categories.value.find(cat => 
+        cat.name.includes(parsed.category!) || parsed.category!.includes(cat.name)
+      )
+      if (matchedCategory) {
+        newTransaction.value.categoryId = matchedCategory.id
+      }
+    }
+    
+    // 如果有识别到日期，设置交易日期
+    if (parsed.date) {
+      newTransaction.value.transactionDate = parsed.date + 'T' + new Date().toTimeString().slice(0, 5)
+    }
+    
     showRecordModal.value = true
+    voiceText.value = ''
+  } catch (error) {
+    console.error('解析语音文本失败:', error)
+    alert(error instanceof Error ? error.message : '解析语音文本失败')
   }
-  voiceText.value = ''
 }
 
 const submitTransaction = async () => {
@@ -348,6 +468,77 @@ const submitTransaction = async () => {
 const formatTime = (timeStr: string) => {
   const date = new Date(timeStr)
   return date.toLocaleDateString() + ' ' + date.toLocaleTimeString()
+}
+
+// 账单同步相关方法
+const handleFileUpload = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files.length > 0) {
+    selectedFile.value = target.files[0]
+    importResult.value = null
+  }
+}
+
+const importFile = async () => {
+  if (!selectedFile.value) return
+  
+  importing.value = true
+  try {
+    let result: BillImportResult
+    
+    if (selectedFile.value.name.endsWith('.csv')) {
+      result = await billSyncService.importFromCSV(selectedFile.value)
+    } else {
+      result = await billSyncService.importFromExcel(selectedFile.value)
+    }
+    
+    importResult.value = result
+    
+    if (result.success) {
+      // 重新加载数据
+      await loadStats()
+      await loadTransactions()
+      // 清空文件选择
+      selectedFile.value = null
+      if (target.files) target.files[0] = null
+    }
+  } catch (error) {
+    console.error('导入文件失败:', error)
+    importResult.value = {
+      success: false,
+      message: '导入失败: ' + (error instanceof Error ? error.message : '未知错误'),
+      importedCount: 0,
+      failedCount: 0,
+      errors: []
+    }
+  } finally {
+    importing.value = false
+  }
+}
+
+const downloadTemplate = () => {
+  const template = billSyncService.getCSVTemplate()
+  const blob = new Blob([template], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = '账单导入模板.csv'
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+const exportTransactions = () => {
+  // 将当前交易记录导出为CSV
+  const bills = transactions.value.map(t => ({
+    date: new Date(t.transactionDate).toISOString().split('T')[0],
+    amount: t.amount,
+    type: t.type === 1 ? 'income' : 'expense',
+    category: t.categoryName || '',
+    description: t.description,
+    account: ''
+  }))
+  
+  billSyncService.downloadCSV(bills, `交易记录_${new Date().toISOString().split('T')[0]}.csv`)
 }
 
 onMounted(() => {
@@ -412,6 +603,10 @@ onMounted(() => {
       color: $text-primary;
     }
   }
+}
+
+.dashboard-section {
+  margin-bottom: $spacing-xl;
 }
 
 .quick-record-section {
@@ -699,6 +894,107 @@ onMounted(() => {
   gap: $spacing-sm;
   padding: $spacing-lg;
   border-top: 1px solid $border-card;
+}
+
+// 账单同步相关样式
+.sync-section {
+  margin-bottom: $spacing-lg;
+  
+  h4 {
+    color: $text-primary;
+    margin-bottom: $spacing-sm;
+  }
+  
+  p {
+    color: $text-secondary;
+    margin-bottom: $spacing-md;
+    font-size: $font-size-sm;
+  }
+}
+
+.file-upload {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+  
+  .selected-file {
+    color: $color-secondary;
+    font-size: $font-size-sm;
+  }
+}
+
+.import-result {
+  padding: $spacing-md;
+  border-radius: $radius-card;
+  margin-bottom: $spacing-md;
+  
+  &.success {
+    background: rgba(#4caf50, 0.1);
+    border: 1px solid #4caf50;
+    color: #4caf50;
+  }
+  
+  &.error {
+    background: rgba(#f44336, 0.1);
+    border: 1px solid #f44336;
+    color: #f44336;
+  }
+  
+  .error-details {
+    margin-top: $spacing-sm;
+    
+    ul {
+      margin: $spacing-xs 0 0 $spacing-md;
+      padding-left: $spacing-sm;
+    }
+  }
+}
+
+.bill-sync {
+  display: flex;
+  gap: $spacing-sm;
+  margin-top: $spacing-md;
+}
+
+.btn-secondary {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: $bg-app;
+  color: $text-primary;
+  border: 1px solid $border-card;
+  border-radius: $radius-button;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: rgba($color-secondary, 0.1);
+    border-color: $color-secondary;
+  }
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: $color-secondary;
+  color: white;
+  border: none;
+  border-radius: $radius-button;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: color.adjust($color-secondary, $lightness: -10%);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
 </style>
