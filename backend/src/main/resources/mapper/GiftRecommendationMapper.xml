@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.beman.mapper.GiftRecommendationMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.beman.model.GiftRecommendation">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="image_url" property="imageUrl" jdbcType="VARCHAR"/>
+        <result column="min_price" property="minPrice" jdbcType="DECIMAL"/>
+        <result column="max_price" property="maxPrice" jdbcType="DECIMAL"/>
+        <result column="min_age" property="minAge" jdbcType="INTEGER"/>
+        <result column="max_age" property="maxAge" jdbcType="INTEGER"/>
+        <result column="gender" property="gender" jdbcType="INTEGER"/>
+        <result column="occasions" property="occasions" jdbcType="VARCHAR"/>
+        <result column="categories" property="categories" jdbcType="VARCHAR"/>
+        <result column="tags" property="tags" jdbcType="VARCHAR"/>
+        <result column="rating" property="rating" jdbcType="INTEGER"/>
+        <result column="reason" property="reason" jdbcType="VARCHAR"/>
+        <result column="purchase_url" property="purchaseUrl" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="deleted" property="deleted" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, name, description, image_url, min_price, max_price, min_age, max_age, gender,
+        occasions, categories, tags, rating, reason, purchase_url, status, create_time, update_time, deleted
+    </sql>
+
+    <!-- 分页查询礼物推荐 -->
+    <select id="selectGiftRecommendationPage" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gift_recommendation
+        WHERE deleted = 0
+        <if test="query.keyword != null and query.keyword != ''">
+            AND (name LIKE CONCAT('%', #{query.keyword}, '%') 
+                 OR description LIKE CONCAT('%', #{query.keyword}, '%'))
+        </if>
+        <if test="query.minPrice != null">
+            AND max_price >= #{query.minPrice}
+        </if>
+        <if test="query.maxPrice != null">
+            AND min_price <= #{query.maxPrice}
+        </if>
+        <if test="query.minAge != null">
+            AND max_age >= #{query.minAge}
+        </if>
+        <if test="query.maxAge != null">
+            AND min_age <= #{query.maxAge}
+        </if>
+        <if test="query.gender != null">
+            AND (gender = 0 OR gender = #{query.gender})
+        </if>
+        <if test="query.occasions != null and query.occasions.size() > 0">
+            AND (
+            <foreach collection="query.occasions" item="occasion" separator=" OR ">
+                JSON_CONTAINS(occasions, CONCAT('"', #{occasion}, '"'))
+            </foreach>
+            )
+        </if>
+        <if test="query.categories != null and query.categories.size() > 0">
+            AND (
+            <foreach collection="query.categories" item="category" separator=" OR ">
+                JSON_CONTAINS(categories, CONCAT('"', #{category}, '"'))
+            </foreach>
+            )
+        </if>
+        <if test="query.tags != null and query.tags.size() > 0">
+            AND (
+            <foreach collection="query.tags" item="tag" separator=" OR ">
+                JSON_CONTAINS(tags, CONCAT('"', #{tag}, '"'))
+            </foreach>
+            )
+        </if>
+        <if test="query.minRating != null">
+            AND rating >= #{query.minRating}
+        </if>
+        <if test="query.maxRating != null">
+            AND rating <= #{query.maxRating}
+        </if>
+        <if test="query.onlyEnabled != null and query.onlyEnabled">
+            AND status = 1
+        </if>
+        <choose>
+            <when test="query.sortBy == 'price'">
+                ORDER BY min_price
+            </when>
+            <when test="query.sortBy == 'createTime'">
+                ORDER BY create_time
+            </when>
+            <otherwise>
+                ORDER BY rating
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="query.sortOrder == 'asc'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+    </select>
+
+    <!-- 根据场合查询礼物推荐 -->
+    <select id="selectByOccasion" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gift_recommendation
+        WHERE deleted = 0 AND status = 1
+        AND JSON_CONTAINS(occasions, CONCAT('"', #{occasion}, '"'))
+        ORDER BY rating DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 根据价格范围查询礼物推荐 -->
+    <select id="selectByPriceRange" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gift_recommendation
+        WHERE deleted = 0 AND status = 1
+        AND max_price >= #{minPrice} AND min_price <= #{maxPrice}
+        ORDER BY rating DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 根据标签查询礼物推荐 -->
+    <select id="selectByTags" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gift_recommendation
+        WHERE deleted = 0 AND status = 1
+        AND (
+        <foreach collection="tags" item="tag" separator=" OR ">
+            JSON_CONTAINS(tags, CONCAT('"', #{tag}, '"'))
+        </foreach>
+        )
+        ORDER BY rating DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取热门礼物推荐 -->
+    <select id="selectPopularRecommendations" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gift_recommendation
+        WHERE deleted = 0 AND status = 1
+        ORDER BY rating DESC, create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 智能推荐查询 -->
+    <select id="selectSmartRecommendations" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gift_recommendation
+        WHERE deleted = 0 AND status = 1
+        <if test="targetAge != null">
+            AND (min_age IS NULL OR min_age <= #{targetAge})
+            AND (max_age IS NULL OR max_age >= #{targetAge})
+        </if>
+        <if test="targetGender != null">
+            AND (gender = 0 OR gender = #{targetGender})
+        </if>
+        <if test="occasions != null and occasions.size() > 0">
+            AND (
+            <foreach collection="occasions" item="occasion" separator=" OR ">
+                JSON_CONTAINS(occasions, CONCAT('"', #{occasion}, '"'))
+            </foreach>
+            )
+        </if>
+        <if test="maxBudget != null">
+            AND min_price <= #{maxBudget}
+        </if>
+        ORDER BY rating DESC, 
+                 CASE WHEN min_price <= #{maxBudget} THEN 0 ELSE 1 END,
+                 min_price ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 统计信息查询 -->
+    <select id="selectTotalCount" resultType="int">
+        SELECT COUNT(*) FROM gift_recommendation WHERE deleted = 0
+    </select>
+
+    <select id="selectEnabledCount" resultType="int">
+        SELECT COUNT(*) FROM gift_recommendation WHERE deleted = 0 AND status = 1
+    </select>
+
+    <select id="selectDisabledCount" resultType="int">
+        SELECT COUNT(*) FROM gift_recommendation WHERE deleted = 0 AND status = 2
+    </select>
+
+    <select id="selectHighRatingCount" resultType="int">
+        SELECT COUNT(*) FROM gift_recommendation WHERE deleted = 0 AND status = 1 AND rating >= 4
+    </select>
+
+    <select id="selectLowPriceCount" resultType="int">
+        SELECT COUNT(*) FROM gift_recommendation WHERE deleted = 0 AND status = 1 AND max_price &lt; 100
+    </select>
+
+    <select id="selectMediumPriceCount" resultType="int">
+        SELECT COUNT(*) FROM gift_recommendation WHERE deleted = 0 AND status = 1 
+        AND min_price >= 100 AND max_price &lt; 500
+    </select>
+
+    <select id="selectHighPriceCount" resultType="int">
+        SELECT COUNT(*) FROM gift_recommendation WHERE deleted = 0 AND status = 1 AND min_price >= 500
+    </select>
+
+</mapper>

@@ -123,6 +123,8 @@ public class TransactionServiceImpl implements TransactionService {
     public FinanceStatsVO getFinanceStats() {
         Long userId = StpUtil.getLoginIdAsLong();
         LocalDate today = LocalDate.now();
+        int currentYear = today.getYear();
+        int currentMonth = today.getMonthValue();
 
         // 月度区间
         LocalDateTime monthStart = today.withDayOfMonth(1).atStartOfDay();
@@ -144,15 +146,23 @@ public class TransactionServiceImpl implements TransactionService {
         vo.setYearIncome(nvl(yearIncome));
         vo.setYearExpense(nvl(yearExpense));
         vo.setYearBalance(vo.getYearIncome().subtract(vo.getYearExpense()));
-        // 其他看板数据后续补充，先返回空/0，满足前端主流程
-        vo.setTotalAssets(BigDecimal.ZERO);
-        vo.setTotalLiabilities(BigDecimal.ZERO);
-        vo.setNetWorth(BigDecimal.ZERO);
-        vo.setExpenseCategoryStats(Collections.emptyList());
-        vo.setIncomeCategoryStats(Collections.emptyList());
-        vo.setWeeklyExpenseTrend(Collections.emptyList());
-        vo.setWeeklyIncomeTrend(Collections.emptyList());
-        vo.setPaymentMethodStats(Collections.emptyList());
+        
+        // 获取详细的统计数据
+        vo.setTotalAssets(BigDecimal.ZERO); // 暂时设为0，后续可扩展
+        vo.setTotalLiabilities(BigDecimal.ZERO); // 暂时设为0，后续可扩展
+        vo.setNetWorth(vo.getTotalAssets().subtract(vo.getTotalLiabilities()));
+        
+        // 获取分类统计
+        vo.setExpenseCategoryStats((List<FinanceStatsVO.CategoryStatsVO>) (List<?>) transactionMapper.selectExpenseCategoryStats(userId, currentYear, currentMonth));
+        vo.setIncomeCategoryStats((List<FinanceStatsVO.CategoryStatsVO>) (List<?>) transactionMapper.selectIncomeCategoryStats(userId, currentYear, currentMonth));
+        
+        // 获取趋势数据
+        vo.setWeeklyExpenseTrend((List<FinanceStatsVO.DailyStatsVO>) (List<?>) transactionMapper.selectWeeklyExpenseTrend(userId));
+        vo.setWeeklyIncomeTrend((List<FinanceStatsVO.DailyStatsVO>) (List<?>) transactionMapper.selectWeeklyIncomeTrend(userId));
+        
+        // 获取支付方式统计
+        vo.setPaymentMethodStats((List<FinanceStatsVO.PaymentMethodStatsVO>) (List<?>) transactionMapper.selectPaymentMethodStats(userId, currentYear, currentMonth));
+        
         return vo;
     }
 

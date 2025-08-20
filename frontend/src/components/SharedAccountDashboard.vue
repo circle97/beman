@@ -12,23 +12,62 @@
       </div>
     </div>
 
+    <!-- 财务概览 -->
+    <div class="overview-section">
+      <h4>财务概览</h4>
+      <div class="overview-grid">
+        <div class="overview-item income">
+          <div class="overview-icon">💰</div>
+          <div class="overview-content">
+            <div class="overview-label">本月收入</div>
+            <div class="overview-value">¥{{ formatAmount(financeStats.monthIncome) }}</div>
+          </div>
+        </div>
+        <div class="overview-item expense">
+          <div class="overview-icon">💸</div>
+          <div class="overview-content">
+            <div class="overview-label">本月支出</div>
+            <div class="overview-value">¥{{ formatAmount(financeStats.monthExpense) }}</div>
+          </div>
+        </div>
+        <div class="overview-item balance">
+          <div class="overview-icon">⚖️</div>
+          <div class="overview-content">
+            <div class="overview-label">本月结余</div>
+            <div class="overview-value" :class="{ negative: financeStats.monthBalance < 0 }">
+              ¥{{ formatAmount(financeStats.monthBalance) }}
+            </div>
+          </div>
+        </div>
+        <div class="overview-item year">
+          <div class="overview-icon">📊</div>
+          <div class="overview-content">
+            <div class="overview-label">本年结余</div>
+            <div class="overview-value" :class="{ negative: financeStats.yearBalance < 0 }">
+              ¥{{ formatAmount(financeStats.yearBalance) }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 消费占比图表 -->
     <div class="chart-section">
-      <h4>消费占比分析</h4>
+      <h4>消费分类占比</h4>
       <div class="chart-container">
         <div class="pie-chart">
           <div class="chart-legend">
-            <div class="legend-item" v-for="item in expenseCategories" :key="item.name">
-              <div class="legend-color" :style="{ backgroundColor: item.color }"></div>
-              <span class="legend-label">{{ item.name }}</span>
-              <span class="legend-value">¥{{ item.amount }}</span>
-              <span class="legend-percentage">{{ item.percentage }}%</span>
+            <div class="legend-item" v-for="item in expenseCategories" :key="item.categoryId">
+              <div class="legend-color" :style="{ backgroundColor: item.categoryColor || getDefaultColor(item.categoryId) }"></div>
+              <span class="legend-label">{{ item.categoryName }}</span>
+              <span class="legend-value">¥{{ formatAmount(item.amount) }}</span>
+              <span class="legend-percentage">{{ item.percentage.toFixed(1) }}%</span>
             </div>
           </div>
           <div class="pie-visual">
             <div class="pie-slice" 
                  v-for="(item, index) in expenseCategories" 
-                 :key="item.name"
+                 :key="item.categoryId"
                  :style="getPieSliceStyle(item, index)">
             </div>
           </div>
@@ -36,211 +75,116 @@
       </div>
     </div>
 
-    <!-- 共同支出统计 -->
-    <div class="shared-expense-section">
-      <h4>共同支出统计</h4>
-      <div class="stats-grid">
-        <div class="stat-item">
-          <div class="stat-number">¥{{ sharedStats.totalShared }}</div>
-          <div class="stat-label">共同支出总额</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">¥{{ sharedStats.averagePerPerson }}</div>
-          <div class="stat-label">人均支出</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">{{ sharedStats.sharedCount }}</div>
-          <div class="stat-label">共同支出笔数</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">{{ sharedStats.participantCount }}</div>
-          <div class="stat-label">参与人数</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 共同支出列表 -->
-    <div class="shared-transactions">
-      <h4>共同支出记录</h4>
-      <div v-if="sharedTransactions.length === 0" class="empty-state">
-        <p>暂无共同支出记录</p>
-      </div>
-      <div v-else class="transaction-list">
-        <div v-for="transaction in sharedTransactions" 
-             :key="transaction.id" 
-             class="transaction-item">
-          <div class="transaction-info">
-            <div class="transaction-title">{{ transaction.description }}</div>
-            <div class="transaction-meta">
-              <span class="category">{{ transaction.categoryName }}</span>
-              <span class="date">{{ formatDate(transaction.transactionDate) }}</span>
-            </div>
+    <!-- 支付方式统计 -->
+    <div class="payment-method-section" v-if="financeStats.paymentMethodStats && financeStats.paymentMethodStats.length > 0">
+      <h4>支付方式统计</h4>
+      <div class="payment-stats">
+        <div class="payment-item" v-for="item in financeStats.paymentMethodStats" :key="item.paymentMethod">
+          <div class="payment-info">
+            <div class="payment-name">{{ item.paymentMethodName }}</div>
+            <div class="payment-percentage">{{ item.percentage.toFixed(1) }}%</div>
           </div>
-          <div class="transaction-amount">
-            <span class="amount">¥{{ transaction.amount }}</span>
-            <span class="shared-badge">共同</span>
+          <div class="payment-bar">
+            <div class="payment-fill" :style="{ width: item.percentage + '%' }"></div>
           </div>
+          <div class="payment-amount">¥{{ formatAmount(item.amount) }}</div>
         </div>
       </div>
     </div>
 
     <!-- 消费趋势 -->
-    <div class="trend-section">
-      <h4>消费趋势</h4>
+    <div class="trend-section" v-if="financeStats.weeklyExpenseTrend && financeStats.weeklyExpenseTrend.length > 0">
+      <h4>最近7天支出趋势</h4>
       <div class="trend-chart">
-        <div class="trend-line" v-for="(point, index) in trendData" :key="index">
-          <div class="trend-point" :style="getTrendPointStyle(point, index)"></div>
-          <div v-if="index < trendData.length - 1" class="trend-connector"></div>
+        <div class="trend-line">
+          <div class="trend-point" 
+               v-for="(point, index) in financeStats.weeklyExpenseTrend" 
+               :key="index"
+               :style="getTrendPointStyle(point.amount, index)">
+          </div>
+          <svg class="trend-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <polyline 
+              :points="getTrendLinePoints()" 
+              fill="none" 
+              stroke="var(--color-secondary)" 
+              stroke-width="2"
+              opacity="0.6">
+            </polyline>
+          </svg>
         </div>
         <div class="trend-labels">
-          <span v-for="label in trendLabels" :key="label" class="trend-label">{{ label }}</span>
+          <span v-for="(point, index) in financeStats.weeklyExpenseTrend" 
+                :key="index" 
+                class="trend-label">
+            {{ formatTrendDate(point.date) }}
+          </span>
         </div>
       </div>
+    </div>
+
+    <!-- 加载状态 -->
+    <div v-if="loading" class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>加载中...</p>
+    </div>
+
+    <!-- 错误状态 -->
+    <div v-if="error" class="error-state">
+      <p>{{ error }}</p>
+      <button @click="loadDashboardData" class="retry-button">重试</button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-
-interface ExpenseCategory {
-  name: string
-  amount: number
-  percentage: number
-  color: string
-}
-
-interface SharedStats {
-  totalShared: number
-  averagePerPerson: number
-  sharedCount: number
-  participantCount: number
-}
-
-interface SharedTransaction {
-  id: number
-  description: string
-  amount: number
-  categoryName: string
-  transactionDate: string
-}
+import { getFinanceStats, FinanceStats } from '../api/finance'
 
 // 响应式数据
 const selectedPeriod = ref('month')
-const expenseCategories = ref<ExpenseCategory[]>([])
-const sharedStats = ref<SharedStats>({
-  totalShared: 0,
-  averagePerPerson: 0,
-  sharedCount: 0,
-  participantCount: 0
+const financeStats = ref<FinanceStats>({
+  monthIncome: 0,
+  monthExpense: 0,
+  monthBalance: 0,
+  yearIncome: 0,
+  yearExpense: 0,
+  yearBalance: 0,
+  totalAssets: 0,
+  totalLiabilities: 0,
+  netWorth: 0,
+  expenseCategoryStats: [],
+  incomeCategoryStats: [],
+  weeklyExpenseTrend: [],
+  weeklyIncomeTrend: [],
+  paymentMethodStats: []
 })
-const sharedTransactions = ref<SharedTransaction[]>([])
-const trendData = ref<number[]>([])
+const loading = ref(false)
+const error = ref('')
 
 // 计算属性
-const trendLabels = computed(() => {
-  const labels = []
-  const now = new Date()
-  
-  switch (selectedPeriod.value) {
-    case 'week':
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(now)
-        date.setDate(date.getDate() - i)
-        labels.push(date.toLocaleDateString('zh-CN', { weekday: 'short' }))
-      }
-      break
-    case 'month':
-      for (let i = 3; i >= 0; i--) {
-        const date = new Date(now)
-        date.setDate(date.getDate() - i * 7)
-        labels.push(`第${Math.ceil((now.getDate() - i * 7) / 7)}周`)
-      }
-      break
-    case 'quarter':
-      for (let i = 2; i >= 0; i--) {
-        labels.push(`第${3 - i}个月`)
-      }
-      break
-    case 'year':
-      for (let i = 3; i >= 0; i--) {
-        const month = now.getMonth() - i * 3
-        labels.push(`${month > 0 ? month : month + 12}月`)
-      }
-      break
-  }
-  
-  return labels
+const expenseCategories = computed(() => {
+  return financeStats.value.expenseCategoryStats || []
 })
 
 // 方法
 const loadDashboardData = async () => {
-  // 模拟加载数据
-  await loadExpenseCategories()
-  await loadSharedStats()
-  await loadSharedTransactions()
-  await loadTrendData()
-}
-
-const loadExpenseCategories = async () => {
-  // 模拟数据
-  const mockData = [
-    { name: '餐饮', amount: 1200, percentage: 35, color: '#FF6B6B' },
-    { name: '交通', amount: 800, percentage: 23, color: '#4ECDC4' },
-    { name: '购物', amount: 600, percentage: 17, color: '#45B7D1' },
-    { name: '娱乐', amount: 400, percentage: 12, color: '#96CEB4' },
-    { name: '其他', amount: 500, percentage: 13, color: '#FFEAA7' }
-  ]
+  loading.value = true
+  error.value = ''
   
-  expenseCategories.value = mockData
-}
-
-const loadSharedStats = async () => {
-  // 模拟数据
-  sharedStats.value = {
-    totalShared: 3500,
-    averagePerPerson: 1750,
-    sharedCount: 15,
-    participantCount: 2
+  try {
+    const stats = await getFinanceStats()
+    financeStats.value = stats
+  } catch (err: any) {
+    error.value = err.message || '加载数据失败'
+    console.error('Failed to load finance stats:', err)
+  } finally {
+    loading.value = false
   }
 }
 
-const loadSharedTransactions = async () => {
-  // 模拟数据
-  sharedTransactions.value = [
-    {
-      id: 1,
-      description: '周末聚餐',
-      amount: 200,
-      categoryName: '餐饮',
-      transactionDate: '2024-01-15'
-    },
-    {
-      id: 2,
-      description: '电影票',
-      amount: 120,
-      categoryName: '娱乐',
-      transactionDate: '2024-01-14'
-    },
-    {
-      id: 3,
-      description: '超市购物',
-      amount: 300,
-      categoryName: '购物',
-      transactionDate: '2024-01-13'
-    }
-  ]
-}
-
-const loadTrendData = async () => {
-  // 模拟趋势数据
-  const baseAmount = 1000
-  trendData.value = Array.from({ length: 4 }, () => 
-    baseAmount + Math.random() * 500
-  )
-}
-
-const getPieSliceStyle = (item: ExpenseCategory, index: number) => {
+const getPieSliceStyle = (item: any, index: number) => {
+  if (expenseCategories.value.length === 0) return {}
+  
   const total = expenseCategories.value.reduce((sum, cat) => sum + cat.percentage, 0)
   let startAngle = 0
   
@@ -252,23 +196,46 @@ const getPieSliceStyle = (item: ExpenseCategory, index: number) => {
   
   return {
     transform: `rotate(${startAngle}deg)`,
-    background: `conic-gradient(${item.color} 0deg, ${item.color} ${angle}deg, transparent ${angle}deg)`
+    background: `conic-gradient(${item.categoryColor || getDefaultColor(item.categoryId)} 0deg, ${item.categoryColor || getDefaultColor(item.categoryId)} ${angle}deg, transparent ${angle}deg)`
   }
 }
 
-const getTrendPointStyle = (value: number, index: number) => {
-  const maxValue = Math.max(...trendData.value)
-  const height = (value / maxValue) * 100
+const getDefaultColor = (categoryId: number) => {
+  const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F']
+  return colors[categoryId % colors.length]
+}
+
+const getTrendPointStyle = (amount: number, index: number) => {
+  if (financeStats.value.weeklyExpenseTrend.length === 0) return {}
+  
+  const maxAmount = Math.max(...financeStats.value.weeklyExpenseTrend.map(p => p.amount))
+  const height = maxAmount > 0 ? (amount / maxAmount) * 100 : 0
   
   return {
     height: `${height}%`,
-    left: `${(index / (trendData.value.length - 1)) * 100}%`
+    left: `${(index / (financeStats.value.weeklyExpenseTrend.length - 1)) * 100}%`
   }
 }
 
-const formatDate = (dateStr: string) => {
+const getTrendLinePoints = () => {
+  if (financeStats.value.weeklyExpenseTrend.length === 0) return ''
+  
+  const maxAmount = Math.max(...financeStats.value.weeklyExpenseTrend.map(p => p.amount))
+  
+  return financeStats.value.weeklyExpenseTrend.map((point, index) => {
+    const x = (index / (financeStats.value.weeklyExpenseTrend.length - 1)) * 100
+    const y = maxAmount > 0 ? 100 - (point.amount / maxAmount) * 100 : 100
+    return `${x},${y}`
+  }).join(' ')
+}
+
+const formatAmount = (amount: number) => {
+  return amount.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+const formatTrendDate = (dateStr: string) => {
   const date = new Date(dateStr)
-  return date.toLocaleDateString('zh-CN')
+  return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
 }
 
 onMounted(() => {
@@ -304,6 +271,71 @@ onMounted(() => {
     border-radius: $radius-button;
     background: $bg-app;
     color: $text-primary;
+  }
+}
+
+.overview-section {
+  margin-bottom: $spacing-xl;
+  
+  h4 {
+    color: $text-primary;
+    margin-bottom: $spacing-md;
+  }
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: $spacing-md;
+}
+
+.overview-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $bg-app;
+  border-radius: $radius-card;
+  border: 1px solid $border-card;
+  
+  .overview-icon {
+    font-size: 2rem;
+  }
+  
+  .overview-content {
+    flex: 1;
+    
+    .overview-label {
+      color: $text-secondary;
+      font-size: $font-size-sm;
+      margin-bottom: $spacing-xs;
+    }
+    
+    .overview-value {
+      font-size: $font-size-lg;
+      font-weight: $font-weight-bold;
+      color: $text-primary;
+      
+      &.negative {
+        color: #ff4757;
+      }
+    }
+  }
+  
+  &.income .overview-value {
+    color: #2ed573;
+  }
+  
+  &.expense .overview-value {
+    color: #ff4757;
+  }
+  
+  &.balance .overview-value {
+    color: #3742fa;
+  }
+  
+  &.year .overview-value {
+    color: #ffa502;
   }
 }
 
@@ -375,7 +407,7 @@ onMounted(() => {
   }
 }
 
-.shared-expense-section {
+.payment-method-section {
   margin-bottom: $spacing-xl;
   
   h4 {
@@ -384,94 +416,57 @@ onMounted(() => {
   }
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: $spacing-md;
-}
-
-.stat-item {
-  text-align: center;
-  padding: $spacing-md;
-  background: $bg-app;
-  border-radius: $radius-card;
-  border: 1px solid $border-card;
-  
-  .stat-number {
-    font-size: $font-size-xl;
-    font-weight: $font-weight-bold;
-    color: $color-secondary;
-    margin-bottom: $spacing-xs;
-  }
-  
-  .stat-label {
-    color: $text-secondary;
-    font-size: $font-size-sm;
-  }
-}
-
-.shared-transactions {
-  margin-bottom: $spacing-xl;
-  
-  h4 {
-    color: $text-primary;
-    margin-bottom: $spacing-md;
-  }
-}
-
-.empty-state {
-  text-align: center;
-  padding: $spacing-lg;
-  color: $text-secondary;
-}
-
-.transaction-list {
+.payment-stats {
   display: flex;
   flex-direction: column;
   gap: $spacing-sm;
 }
 
-.transaction-item {
+.payment-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: $spacing-md;
+  gap: $spacing-md;
+  padding: $spacing-sm;
   background: $bg-app;
   border-radius: $radius-card;
   border: 1px solid $border-card;
-}
-
-.transaction-info {
-  .transaction-title {
+  
+  .payment-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 120px;
+    
+    .payment-name {
+      color: $text-primary;
+      font-weight: $font-weight-medium;
+    }
+    
+    .payment-percentage {
+      color: $color-secondary;
+      font-size: $font-size-sm;
+    }
+  }
+  
+  .payment-bar {
+    flex: 1;
+    height: 8px;
+    background: $border-card;
+    border-radius: 4px;
+    overflow: hidden;
+    
+    .payment-fill {
+      height: 100%;
+      background: $color-secondary;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+  }
+  
+  .payment-amount {
     color: $text-primary;
     font-weight: $font-weight-medium;
-    margin-bottom: $spacing-xs;
-  }
-  
-  .transaction-meta {
-    display: flex;
-    gap: $spacing-md;
-    font-size: $font-size-sm;
-    color: $text-secondary;
-  }
-}
-
-.transaction-amount {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-  
-  .amount {
-    font-weight: $font-weight-bold;
-    color: $text-primary;
-  }
-  
-  .shared-badge {
-    background: $color-secondary;
-    color: white;
-    padding: $spacing-xs $spacing-sm;
-    border-radius: 12px;
-    font-size: $font-size-xs;
+    min-width: 80px;
+    text-align: right;
   }
 }
 
@@ -492,9 +487,7 @@ onMounted(() => {
 }
 
 .trend-line {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   width: 100%;
   height: 100%;
 }
@@ -507,16 +500,16 @@ onMounted(() => {
   border-radius: 50%;
   transform: translateX(-50%);
   bottom: 0;
+  z-index: 2;
 }
 
-.trend-connector {
+.trend-svg {
   position: absolute;
-  width: 2px;
+  top: 0;
+  left: 0;
+  width: 100%;
   height: 100%;
-  background: $color-secondary;
-  opacity: 0.3;
-  left: 50%;
-  transform: translateX(-50%);
+  z-index: 1;
 }
 
 .trend-labels {
@@ -533,6 +526,41 @@ onMounted(() => {
   color: $text-secondary;
 }
 
+.loading-state, .error-state {
+  text-align: center;
+  padding: $spacing-xl;
+  color: $text-secondary;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid $border-card;
+  border-top: 4px solid $color-secondary;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto $spacing-md;
+}
+
+.retry-button {
+  background: $color-secondary;
+  color: white;
+  border: none;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-button;
+  cursor: pointer;
+  margin-top: $spacing-sm;
+  
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 // 响应式设计
 @media (max-width: $breakpoint-md) {
   .chart-container {
@@ -540,7 +568,7 @@ onMounted(() => {
     gap: $spacing-md;
   }
   
-  .stats-grid {
+  .overview-grid {
     grid-template-columns: repeat(2, 1fr);
   }
   

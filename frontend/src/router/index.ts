@@ -79,6 +79,18 @@ const routes: RouteRecordRaw[] = [
     name: 'TestAudit',
     component: () => import('../views/TestAudit.vue'),
     meta: { title: '内容审核测试' }
+  },
+  {
+    path: '/test-dashboard',
+    name: 'TestDashboard',
+    component: () => import('../views/TestDashboard.vue'),
+    meta: { title: '共同账户看板测试' }
+  },
+  {
+    path: '/test-reminder',
+    name: 'TestReminder',
+    component: () => import('../views/TestReminder.vue'),
+    meta: { title: '提醒管理测试' }
   }
 ]
 

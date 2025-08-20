@@ -41,11 +41,14 @@ $shadow-card-hover: 0 8px 24px rgba(0,0,0,0.22);
 $shadow-button-primary: 0 2px 8px rgba(0,122,255,0.18);
 $shadow-button-primary-hover: 0 4px 16px rgba(0,122,255,0.22);
 $shadow-icon-container: 0 2px 8px rgba(78,205,196,0.08);
+$shadow-item: 0 2px 8px rgba(0,0,0,0.1);
+$shadow-hover: 0 4px 16px rgba(0,0,0,0.15);
 
 // 圆角
 $radius-card: 16px;
 $radius-button: 8px;
 $radius-icon-container: 50%;
+$radius-tag: 12px;
 
 // 动画
 $transition-button: background 0.2s, box-shadow 0.2s;
