@@ -75,9 +75,9 @@ class ScheduleControllerTest {
         mockGiftRecommendation.setId(1L);
         mockGiftRecommendation.setName("鲜花");
         mockGiftRecommendation.setDescription("美丽的玫瑰花束");
-        mockGiftRecommendation.setMinPrice(50);
-        mockGiftRecommendation.setMaxPrice(100);
-        mockGiftRecommendation.setRating(4.5);
+        mockGiftRecommendation.setMinPrice(new BigDecimal(50));
+        mockGiftRecommendation.setMaxPrice(new BigDecimal(100));
+        mockGiftRecommendation.setRating(4);
     }
 
     @Test
