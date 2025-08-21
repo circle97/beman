@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 import uvicorn
 from loguru import logger
 
-from app.routers import emotion_analysis, content_moderation, dialogue_system, emotion_decoder
+from app.routers import emotion_analysis, content_moderation, dialogue_system, emotion_decoder, communication_sandbox
 from app.core.config import settings
 from app.core.exceptions import AIException
 
@@ -36,6 +36,7 @@ app.include_router(emotion_analysis.router, prefix="/api/emotion", tags=["情感
 app.include_router(content_moderation.router, prefix="/api/moderation", tags=["内容审核"])
 app.include_router(dialogue_system.router, prefix="/api/dialogue", tags=["智能对话"])
 app.include_router(emotion_decoder.router, prefix="/api/decoder", tags=["情感解码器"])
+app.include_router(communication_sandbox.router, prefix="/api/sandbox", tags=["沟通沙盒"])
 
 # 全局异常处理
 @app.exception_handler(AIException)
@@ -65,7 +66,7 @@ async def root():
     return {
         "message": "Beman AI Service",
         "version": "1.0.0",
-        "services": ["情感分析", "内容审核", "智能对话", "情感解码器"]
+        "services": ["情感分析", "内容审核", "智能对话", "情感解码器", "沟通沙盒"]
     }
 
 if __name__ == "__main__":
