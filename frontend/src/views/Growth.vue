@@ -1,298 +1,452 @@
 <template>
-  <div class="growth-page">
+  <div class="growth-archive">
     <!-- 页面头部 -->
     <div class="page-header">
-      <h1>成长档案</h1>
-      <p class="subtitle">记录你的成长轨迹，见证关系改善的每一步</p>
-    </div>
-
-    <!-- 统计概览 -->
-    <div class="stats-overview" v-if="statistics">
-      <div class="stat-card">
-        <div class="stat-number">{{ statistics.totalPlans }}</div>
-        <div class="stat-label">总计划数</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">{{ statistics.completedPlans }}</div>
-        <div class="stat-label">已完成</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">{{ statistics.inProgressPlans }}</div>
-        <div class="stat-label">进行中</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">{{ Math.round(statistics.completionRate) }}%</div>
-        <div class="stat-label">完成率</div>
-      </div>
-    </div>
-
-    <!-- 操作按钮 -->
-    <div class="actions-section">
-      <button class="btn-primary" @click="showCreateModal = true">
-        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-        </svg>
-        创建新计划
-      </button>
-      <button class="btn-secondary" @click="refreshData">
-        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-          <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
-        </svg>
-        刷新
-      </button>
-    </div>
-
-    <!-- 计划列表 -->
-    <div class="plans-section">
-      <h2>我的实践计划</h2>
+      <h1>🌱 成长档案</h1>
+      <p class="subtitle">记录关系里程碑，追踪成长轨迹</p>
       
-      <div v-if="loading" class="loading">
-        <div class="loading-spinner"></div>
-        <p>加载中...</p>
-      </div>
-      
-      <div v-else-if="plans.length === 0" class="empty-state">
-        <svg viewBox="0 0 24 24" fill="currentColor" width="64" height="64">
-          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-        </svg>
-        <h3>暂无实践计划</h3>
-        <p>开始创建你的第一个实践计划，记录关系改善的每一步</p>
-        <button class="btn-primary" @click="showCreateModal = true">创建第一个计划</button>
-      </div>
-      
-      <div v-else class="plans-grid">
-        <div 
-          v-for="plan in plans" 
-          :key="plan.id"
-          class="plan-card"
-          :class="getPlanStatusClass(plan.status)"
-        >
-          <div class="plan-header">
-            <div class="plan-type">{{ getPlanTypeText(plan.type) }}</div>
-            <div class="plan-status">{{ getPlanStatusText(plan.status) }}</div>
+      <!-- 快速开始指南 -->
+      <div class="quick-start-guide">
+        <div class="guide-tabs">
+          <button 
+            v-for="guide in quickGuides" 
+            :key="guide.key"
+            :class="['guide-tab', { active: activeGuide === guide.key }]"
+            @click="activeGuide = guide.key"
+          >
+            {{ guide.label }}
+          </button>
+        </div>
+        
+        <div v-if="activeGuide" class="guide-content">
+          <div class="guide-header">
+            <h3>{{ getActiveGuide().title }}</h3>
+            <button @click="activeGuide = ''" class="close-guide-btn">×</button>
           </div>
-          
-          <h3 class="plan-title">{{ plan.title }}</h3>
-          <p class="plan-description">{{ plan.description }}</p>
-          
-          <div class="plan-progress">
-            <div class="progress-bar">
-              <div 
-                class="progress-fill" 
-                :style="{ width: plan.progress + '%' }"
-              ></div>
+          <div class="guide-steps">
+            <div v-for="(step, index) in getActiveGuide().steps" :key="index" class="guide-step">
+              <span class="step-number">{{ index + 1 }}</span>
+              <p>{{ step }}</p>
             </div>
-            <span class="progress-text">{{ plan.progress }}%</span>
           </div>
-          
-          <div class="plan-meta">
-            <div class="meta-item">
-              <span class="label">优先级:</span>
-              <span class="value" :class="getPriorityClass(plan.priority)">
-                {{ getPlanPriorityText(plan.priority) }}
+        </div>
+      </div>
+    </div>
+
+    <!-- 功能导航 -->
+    <div class="nav-tabs">
+      <button 
+        v-for="tab in tabs" 
+        :key="tab.key"
+        :class="['nav-tab', { active: activeTab === tab.key }]"
+        @click="activeTab = tab.key"
+      >
+        {{ tab.label }}
+      </button>
+    </div>
+
+    <!-- 里程碑管理模块 -->
+    <div v-if="activeTab === 'milestones'" class="tab-content">
+      <div class="milestones-section">
+        <div class="section-header">
+          <h2>关系里程碑</h2>
+          <div class="header-actions">
+            <div class="search-filter">
+              <input 
+                v-model="milestoneSearch" 
+                type="text" 
+                placeholder="搜索里程碑..." 
+                class="search-input"
+              />
+              <select v-model="milestoneTypeFilter" class="filter-select">
+                <option value="">所有类型</option>
+                <option v-for="type in milestoneTypes" :key="type.value" :value="type.value">
+                  {{ type.label }}
+                </option>
+              </select>
+            </div>
+            <button @click="showMilestoneForm = true" class="add-btn">
+              ➕ 添加里程碑
+            </button>
+          </div>
+        </div>
+
+        <!-- 里程碑列表 -->
+        <div class="milestones-grid">
+          <div 
+            v-for="milestone in filteredMilestones" 
+            :key="milestone.id" 
+            class="milestone-card"
+            @click="selectMilestone(milestone)"
+          >
+            <div class="milestone-icon" :class="milestone.milestoneType">
+              {{ getMilestoneIcon(milestone.milestoneType) }}
+            </div>
+            <div class="milestone-content">
+              <h3>{{ milestone.title }}</h3>
+              <p>{{ milestone.description }}</p>
+              <div class="milestone-meta">
+                <span class="date">{{ formatDate(milestone.milestoneDate) }}</span>
+                <span class="location" v-if="milestone.location">{{ milestone.location }}</span>
+                <span class="emotion-score" v-if="milestone.emotionScore">
+                  💖 {{ milestone.emotionScore }}/10
+                </span>
+              </div>
+              <div class="milestone-tags" v-if="milestone.tags && milestone.tags.length">
+                <span v-for="tag in milestone.tags" :key="tag" class="tag">
+                  {{ tag }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 里程碑表单 -->
+        <div v-if="showMilestoneForm" class="milestone-form-overlay">
+          <div class="milestone-form">
+            <div class="form-header">
+              <h3>{{ editingMilestone ? '编辑里程碑' : '添加里程碑' }}</h3>
+              <button @click="closeMilestoneForm" class="close-btn">×</button>
+            </div>
+            
+            <form @submit.prevent="saveMilestone">
+              <div class="form-group">
+                <label>里程碑类型</label>
+                <select v-model="milestoneForm.milestoneType" required>
+                  <option value="">选择类型</option>
+                  <option v-for="type in milestoneTypes" :key="type.value" :value="type.value">
+                    {{ type.label }}
+                  </option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>标题</label>
+                <input v-model="milestoneForm.title" type="text" required placeholder="里程碑标题" />
+              </div>
+              
+              <div class="form-group">
+                <label>描述</label>
+                <textarea v-model="milestoneForm.description" rows="3" placeholder="里程碑描述"></textarea>
+              </div>
+              
+              <div class="form-group">
+                <label>日期</label>
+                <input v-model="milestoneForm.milestoneDate" type="date" required />
+              </div>
+              
+              <div class="form-group">
+                <label>地点</label>
+                <input v-model="milestoneForm.location" type="text" placeholder="地点（可选）" />
+              </div>
+              
+              <div class="form-group">
+                <label>情感评分 (1-10)</label>
+                <input v-model="milestoneForm.emotionScore" type="number" min="1" max="10" />
+              </div>
+              
+              <div class="form-group">
+                <label>标签</label>
+                <input v-model="milestoneForm.tagInput" type="text" placeholder="输入标签，用逗号分隔" />
+              </div>
+              
+              <div class="form-actions">
+                <button type="button" @click="closeMilestoneForm" class="cancel-btn">取消</button>
+                <button type="submit" class="save-btn">保存</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 成长轨迹模块 -->
+    <div v-if="activeTab === 'trajectory'" class="tab-content">
+      <div class="trajectory-section">
+        <h2>成长轨迹</h2>
+        
+        <!-- 轨迹记录表单 -->
+        <div class="trajectory-form">
+          <h3>记录今日成长</h3>
+          <form @submit.prevent="saveTrajectory">
+            <div class="score-inputs">
+              <div class="score-group">
+                <label>沟通质量 (1-100)</label>
+                <input v-model="trajectoryForm.communicationScore" type="number" min="1" max="100" />
+              </div>
+              
+              <div class="score-group">
+                <label>信任程度 (1-100)</label>
+                <input v-model="trajectoryForm.trustScore" type="number" min="1" max="100" />
+              </div>
+              
+              <div class="score-group">
+                <label>相互支持 (1-100)</label>
+                <input v-model="trajectoryForm.supportScore" type="number" min="1" max="100" />
+              </div>
+              
+              <div class="score-group">
+                <label>亲密度 (1-100)</label>
+                <input v-model="trajectoryForm.intimacyScore" type="number" min="1" max="100" />
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>情绪状态</label>
+              <select v-model="trajectoryForm.moodState">
+                <option value="">选择情绪状态</option>
+                <option v-for="mood in moodStates" :key="mood.value" :value="mood.value">
+                  {{ mood.label }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>关系笔记</label>
+              <textarea v-model="trajectoryForm.relationshipNotes" rows="3" placeholder="记录今天的关系感受..."></textarea>
+            </div>
+            
+            <div class="form-group">
+              <label>改进目标</label>
+              <textarea v-model="trajectoryForm.improvementGoals" rows="2" placeholder="写下需要改进的地方..."></textarea>
+            </div>
+            
+            <button type="submit" class="save-trajectory-btn">记录轨迹</button>
+          </form>
+        </div>
+        
+        <!-- 轨迹图表 -->
+        <div class="trajectory-chart">
+          <h3>成长趋势</h3>
+          <div class="chart-container">
+            <canvas id="trajectoryChart"></canvas>
+          </div>
+        </div>
+        
+        <!-- 轨迹记录列表 -->
+        <div class="trajectory-list">
+          <h3>最近记录</h3>
+          <div class="trajectory-items">
+            <div 
+              v-for="trajectory in trajectories" 
+              :key="trajectory.id" 
+              class="trajectory-item"
+              @click="viewTrajectoryDetail(trajectory)"
+            >
+              <div class="trajectory-header">
+                <div class="trajectory-date">{{ formatDate(trajectory.recordDate) }}</div>
+                <div class="trajectory-mood" v-if="trajectory.moodState">
+                  {{ getMoodEmoji(trajectory.moodState) }} {{ trajectory.moodState }}
+                </div>
+              </div>
+              <div class="trajectory-scores">
+                <div class="score-row">
+                  <span class="score-item">沟通: {{ trajectory.communicationScore || 0 }}</span>
+                  <span class="score-item">信任: {{ trajectory.trustScore || 0 }}</span>
+                </div>
+                <div class="score-row">
+                  <span class="score-item">支持: {{ trajectory.supportScore || 0 }}</span>
+                  <span class="score-item">亲密: {{ trajectory.intimacyScore || 0 }}</span>
+                </div>
+                <div class="score-row overall">
+                  <span class="score-item overall">综合评分: {{ trajectory.overallScore || 0 }}</span>
+                </div>
+              </div>
+              <div class="trajectory-notes" v-if="trajectory.relationshipNotes">
+                <p>{{ trajectory.relationshipNotes }}</p>
+              </div>
+              <div class="trajectory-actions">
+                <button @click.stop="editTrajectory(trajectory)" class="edit-trajectory-btn">
+                  编辑
+                </button>
+                <button @click.stop="deleteTrajectory(trajectory)" class="delete-trajectory-btn">
+                  删除
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 目标管理模块 -->
+    <div v-if="activeTab === 'goals'" class="tab-content">
+      <div class="goals-section">
+        <div class="section-header">
+          <h2>关系目标</h2>
+          <button @click="showGoalForm = true" class="add-btn">
+            ➕ 添加目标
+          </button>
+        </div>
+        
+        <!-- 目标表单 -->
+        <div v-if="showGoalForm" class="goal-form-overlay">
+          <div class="goal-form">
+            <div class="form-header">
+              <h3>{{ editingGoal ? '编辑目标' : '添加目标' }}</h3>
+              <button @click="closeGoalForm" class="close-btn">×</button>
+            </div>
+            
+            <form @submit.prevent="saveGoal">
+              <div class="form-group">
+                <label>目标类型</label>
+                <select v-model="goalForm.goalType" required>
+                  <option value="">选择类型</option>
+                  <option v-for="type in goalTypes" :key="type.value" :value="type.value">
+                    {{ type.label }}
+                  </option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>目标标题</label>
+                <input v-model="goalForm.title" type="text" required placeholder="目标标题" />
+              </div>
+              
+              <div class="form-group">
+                <label>目标描述</label>
+                <textarea v-model="goalForm.description" rows="3" placeholder="目标描述"></textarea>
+              </div>
+              
+              <div class="form-group">
+                <label>目标完成日期</label>
+                <input v-model="goalForm.targetDate" type="date" required />
+              </div>
+              
+              <div class="form-group">
+                <label>优先级</label>
+                <select v-model="goalForm.priority">
+                  <option value="1">高</option>
+                  <option value="2">中</option>
+                  <option value="3">低</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>完成奖励</label>
+                <input v-model="goalForm.reward" type="text" placeholder="完成奖励（可选）" />
+              </div>
+              
+              <div class="form-actions">
+                <button type="button" @click="closeGoalForm" class="cancel-btn">取消</button>
+                <button type="submit" class="save-btn">保存</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- 目标列表 -->
+        <div class="goals-grid">
+          <div 
+            v-for="goal in goals" 
+            :key="goal.id" 
+            class="goal-card"
+            :class="goal.status"
+          >
+            <div class="goal-header">
+              <h3>{{ goal.title }}</h3>
+              <span class="goal-type">{{ getGoalTypeLabel(goal.goalType) }}</span>
+            </div>
+            
+            <p class="goal-description">{{ goal.description }}</p>
+            
+            <div class="goal-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: goal.progress + '%' }"></div>
+              </div>
+              <span class="progress-text">{{ goal.progress }}%</span>
+            </div>
+            
+            <div class="goal-meta">
+              <span class="target-date">目标日期: {{ formatDate(goal.targetDate) }}</span>
+              <span class="priority" :class="'priority-' + goal.priority">
+                {{ getPriorityLabel(goal.priority) }}
               </span>
             </div>
-            <div class="meta-item">
-              <span class="label">创建时间:</span>
-              <span class="value">{{ formatDate(plan.createTime) }}</span>
+            
+            <div class="goal-actions">
+              <button @click="editGoal(goal)" class="edit-btn">编辑</button>
+              <button @click="updateGoalProgress(goal)" class="progress-btn">更新进度</button>
+              <button @click="completeGoal(goal)" class="complete-btn" v-if="goal.status === 0">
+                完成目标
+              </button>
             </div>
-            <div v-if="plan.tags" class="meta-item">
-              <span class="label">标签:</span>
-              <span class="value">{{ plan.tags }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 统计分析模块 -->
+    <div v-if="activeTab === 'analytics'" class="tab-content">
+      <div class="analytics-section">
+        <h2>成长分析</h2>
+        
+        <!-- 统计卡片 -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-content">
+              <h3>{{ stats.milestone?.totalCount || 0 }}</h3>
+              <p>里程碑总数</p>
             </div>
           </div>
           
-          <div class="plan-actions">
-            <button 
-              v-if="plan.status === 0" 
-              class="btn-start"
-              @click="startPlan(plan.id!)"
-            >
-              开始执行
-            </button>
-            <button 
-              v-if="plan.status === 1" 
-              class="btn-update"
-              @click="openUpdateModal(plan)"
-            >
-              更新进度
-            </button>
-            <button 
-              v-if="plan.status === 1" 
-              class="btn-complete"
-              @click="completePlan(plan.id!)"
-            >
-              标记完成
-            </button>
-            <button 
-              class="btn-edit"
-              @click="openUpdateModal(plan)"
-            >
-              编辑
-            </button>
-            <button 
-              class="btn-delete"
-              @click="deletePlan(plan.id!)"
-            >
-              删除
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 创建计划模态框 -->
-    <div v-if="showCreateModal" class="modal-overlay" @click="showCreateModal = false">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>创建实践计划</h3>
-          <button class="close-btn" @click="showCreateModal = false">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-            </svg>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label>计划标题 *</label>
-            <input v-model="newPlan.title" type="text" placeholder="请输入计划标题" />
-          </div>
-          <div class="form-group">
-            <label>计划描述 *</label>
-            <textarea 
-              v-model="newPlan.description" 
-              placeholder="请描述你的计划内容..." 
-              rows="4"
-            ></textarea>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>计划类型 *</label>
-              <select v-model="newPlan.type">
-                <option value="1">沟通改善</option>
-                <option value="2">情绪管理</option>
-                <option value="3">关系维护</option>
-                <option value="4">个人成长</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>优先级</label>
-              <select v-model="newPlan.priority">
-                <option value="1">低</option>
-                <option value="2">中</option>
-                <option value="3">高</option>
-              </select>
+          <div class="stat-card">
+            <div class="stat-icon">📈</div>
+            <div class="stat-content">
+              <h3>{{ stats.trajectory?.avgOverallScore || 0 }}</h3>
+              <p>平均综合评分</p>
             </div>
           </div>
-          <div class="form-group">
-            <label>标签</label>
-            <input v-model="newPlan.tags" type="text" placeholder="用逗号分隔多个标签" />
-          </div>
-          <div class="form-group">
-            <label>备注</label>
-            <textarea v-model="newPlan.remark" placeholder="其他备注信息..." rows="2"></textarea>
-          </div>
-          <div class="form-group">
-            <label class="checkbox-label">
-              <input v-model="newPlan.isPublic" type="checkbox" :true-value="1" :false-value="0" />
-              <span>公开分享（其他用户可以看到）</span>
-            </label>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-secondary" @click="showCreateModal = false">取消</button>
-          <button class="btn-primary" @click="createPlan" :disabled="!newPlan.title || !newPlan.description">
-            创建计划
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 更新计划模态框 -->
-    <div v-if="showUpdateModal && editingPlan" class="modal-overlay" @click="showUpdateModal = false">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>更新实践计划</h3>
-          <button class="close-btn" @click="showUpdateModal = false">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-            </svg>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label>计划标题 *</label>
-            <input v-model="editingPlan.title" type="text" placeholder="请输入计划标题" />
-          </div>
-          <div class="form-group">
-            <label>计划描述 *</label>
-            <textarea 
-              v-model="editingPlan.description" 
-              placeholder="请描述你的计划内容..." 
-              rows="4"
-            ></textarea>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>计划类型 *</label>
-              <select v-model="editingPlan.type">
-                <option value="1">沟通改善</option>
-                <option value="2">情绪管理</option>
-                <option value="3">关系维护</option>
-                <option value="4">个人成长</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>优先级</label>
-              <select v-model="editingPlan.priority">
-                <option value="1">低</option>
-                <option value="2">中</option>
-                <option value="3">高</option>
-              </select>
+          
+          <div class="stat-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-content">
+              <h3>{{ stats.goal?.totalCount || 0 }}</h3>
+              <p>目标总数</p>
             </div>
           </div>
-          <div class="form-group">
-            <label>当前进度</label>
-            <div class="progress-input">
-              <input 
-                v-model.number="editingPlan.progress" 
-                type="range" 
-                min="0" 
-                max="100" 
-                step="5"
-              />
-              <span class="progress-value">{{ editingPlan.progress }}%</span>
+          
+          <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-content">
+              <h3>{{ stats.goal?.completionRate || 0 }}%</h3>
+              <p>目标完成率</p>
             </div>
           </div>
-          <div class="form-group">
-            <label>计划状态</label>
-            <select v-model="editingPlan.status">
-              <option value="0">未开始</option>
-              <option value="1">进行中</option>
-              <option value="2">已完成</option>
-              <option value="3">已放弃</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>标签</label>
-            <input v-model="editingPlan.tags" type="text" placeholder="用逗号分隔多个标签" />
-          </div>
-          <div class="form-group">
-            <label>备注</label>
-            <textarea v-model="editingPlan.remark" placeholder="其他备注信息..." rows="2"></textarea>
-          </div>
-          <div class="form-group">
-            <label class="checkbox-label">
-              <input v-model="editingPlan.isPublic" type="checkbox" :true-value="1" :false-value="0" />
-              <span>公开分享（其他用户可以看到）</span>
-            </label>
+        </div>
+        
+        <!-- 成长趋势图 -->
+        <div class="trend-chart">
+          <h3>成长趋势分析</h3>
+          <div class="chart-container">
+            <canvas id="trendChart"></canvas>
           </div>
         </div>
-        <div class="modal-footer">
-          <button class="btn-secondary" @click="showUpdateModal = false">取消</button>
-          <button class="btn-primary" @click="updatePlan" :disabled="!editingPlan.title || !editingPlan.description">
-            保存更新
-          </button>
+        
+        <!-- 成就系统 -->
+        <div class="achievements-section">
+          <h3>🏆 成就徽章</h3>
+          <div class="achievements-grid">
+            <div 
+              v-for="achievement in achievements" 
+              :key="achievement.id"
+              class="achievement-card"
+              :class="{ unlocked: achievement.unlocked }"
+            >
+              <div class="achievement-icon">{{ achievement.icon }}</div>
+              <div class="achievement-content">
+                <h4>{{ achievement.title }}</h4>
+                <p>{{ achievement.description }}</p>
+                <div class="achievement-progress">
+                  <div class="progress-bar">
+                    <div class="progress-fill" :style="{ width: achievement.progress + '%' }"></div>
+                  </div>
+                  <span>{{ achievement.progress }}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -300,627 +454,1791 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { 
-  practicePlanAPI, 
-  type PracticePlan, 
-  type PlanStatistics,
-  PLAN_STATUS,
-  getPlanTypeText,
-  getPlanStatusText,
-  getPlanPriorityText
-} from '../api/practicePlan'
+import { ref, onMounted, nextTick, computed } from 'vue'
+import { Chart } from 'chart.js'
+
+// 类型定义
+interface Milestone {
+  id: string
+  milestoneType: string
+  title: string
+  description: string
+  milestoneDate: string
+  location?: string
+  emotionScore?: number
+  photos?: string[]
+  tags?: string[]
+  isPublic: number
+}
+
+interface Trajectory {
+  id: string
+  recordDate: string
+  communicationScore?: number
+  trustScore?: number
+  supportScore?: number
+  intimacyScore?: number
+  overallScore?: number
+  moodState?: string
+  relationshipNotes?: string
+  improvementGoals?: string
+}
+
+interface Goal {
+  id: string
+  goalType: string
+  title: string
+  description: string
+  targetDate: string
+  priority: number
+  status: number
+  progress: number
+  milestones?: string[]
+  reward?: string
+}
+
+interface Stats {
+  milestone?: {
+    totalCount: number
+    typeStats: Record<string, number>
+  }
+  trajectory?: {
+    totalCount: number
+    avgOverallScore: number
+    maxScore: number
+    minScore: number
+  }
+  goal?: {
+    totalCount: number
+    completedCount: number
+    inProgressCount: number
+    completionRate: number
+  }
+}
+
+interface Achievement {
+  id: string
+  title: string
+  description: string
+  icon: string
+  unlocked: boolean
+  progress: number
+  maxProgress: number
+  reward?: string
+}
 
 // 响应式数据
-const loading = ref(false)
-const plans = ref<PracticePlan[]>([])
-const statistics = ref<PlanStatistics | null>(null)
-const showCreateModal = ref(false)
-const editingPlan = ref<PracticePlan | null>(null)
+const activeTab = ref('milestones')
+const activeGuide = ref('')
+const showMilestoneForm = ref(false)
+const showGoalForm = ref(false)
+const editingMilestone = ref<Milestone | null>(null)
+const editingGoal = ref<Goal | null>(null)
 
-// 新计划数据
-const newPlan = ref<PracticePlan>({
-  userId: 1, // 临时用户ID，实际应该从用户状态获取
+const milestones = ref<Milestone[]>([])
+const trajectories = ref<Trajectory[]>([])
+const goals = ref<Goal[]>([])
+const stats = ref<Stats>({})
+const achievements = ref<Achievement[]>([])
+
+// 搜索和筛选
+const milestoneSearch = ref('')
+const milestoneTypeFilter = ref('')
+const goalSearch = ref('')
+const goalTypeFilter = ref('')
+
+// 表单数据
+const milestoneForm = ref({
+  milestoneType: '',
   title: '',
   description: '',
-  type: 1,
-  status: 0,
-  priority: 2,
-  progress: 0,
-  isPublic: 0
+  milestoneDate: '',
+  location: '',
+  emotionScore: undefined as number | undefined,
+  tagInput: ''
 })
 
-// 方法
-const loadData = async () => {
-  loading.value = true
-  try {
-    // 加载用户计划列表
-    const plansResult = await practicePlanAPI.getUserPlans(1) // 临时用户ID
-    if (plansResult.success) {
-      plans.value = plansResult.data
-    }
-    
-    // 加载统计信息
-    const statsResult = await practicePlanAPI.getPlanStatistics(1) // 临时用户ID
-    if (statsResult.success) {
-      statistics.value = statsResult.data
-    }
-  } catch (error) {
-    console.error('加载数据失败:', error)
-  } finally {
-    loading.value = false
+const trajectoryForm = ref({
+  communicationScore: undefined as number | undefined,
+  trustScore: undefined as number | undefined,
+  supportScore: undefined as number | undefined,
+  intimacyScore: undefined as number | undefined,
+  moodState: '',
+  relationshipNotes: '',
+  improvementGoals: ''
+})
+
+const goalForm = ref({
+  goalType: '',
+  title: '',
+  description: '',
+  targetDate: '',
+  priority: 2,
+  reward: ''
+})
+
+// 配置数据
+const tabs = [
+  { key: 'milestones', label: '里程碑' },
+  { key: 'trajectory', label: '成长轨迹' },
+  { key: 'goals', label: '目标管理' },
+  { key: 'analytics', label: '成长分析' }
+]
+
+const milestoneTypes = [
+  { value: 'first_meet', label: '初次见面' },
+  { value: 'first_date', label: '第一次约会' },
+  { value: 'confession', label: '表白' },
+  { value: 'engagement', label: '订婚' },
+  { value: 'wedding', label: '结婚' },
+  { value: 'anniversary', label: '纪念日' },
+  { value: 'travel', label: '旅行' },
+  { value: 'gift', label: '礼物' },
+  { value: 'conflict_resolution', label: '冲突解决' },
+  { value: 'breakthrough', label: '关系突破' }
+]
+
+const moodStates = [
+  { value: 'happy', label: '开心' },
+  { value: 'excited', label: '兴奋' },
+  { value: 'content', label: '满足' },
+  { value: 'calm', label: '平静' },
+  { value: 'neutral', label: '一般' },
+  { value: 'worried', label: '担心' },
+  { value: 'sad', label: '难过' },
+  { value: 'angry', label: '生气' },
+  { value: 'frustrated', label: '沮丧' }
+]
+
+const goalTypes = [
+  { value: 'communication', label: '沟通改善' },
+  { value: 'trust', label: '信任建立' },
+  { value: 'intimacy', label: '亲密提升' },
+  { value: 'conflict', label: '冲突解决' },
+  { value: 'support', label: '相互支持' },
+  { value: 'quality_time', label: '共处时光' },
+  { value: 'understanding', label: '相互理解' },
+  { value: 'appreciation', label: '表达感激' }
+]
+
+const quickGuides = [
+  {
+    key: 'milestone',
+    label: '里程碑指南',
+    title: '如何记录关系里程碑',
+    steps: [
+      '点击"添加里程碑"按钮',
+      '选择里程碑类型（如初次见面、表白等）',
+      '填写标题、描述和日期',
+      '添加地点和情感评分',
+      '保存里程碑记录'
+    ]
+  },
+  {
+    key: 'trajectory',
+    label: '成长轨迹指南',
+    title: '如何记录成长轨迹',
+    steps: [
+      '切换到"成长轨迹"标签页',
+      '填写各项评分（沟通、信任、支持、亲密）',
+      '选择当前情绪状态',
+      '记录关系笔记和改进目标',
+      '保存轨迹记录'
+    ]
+  },
+  {
+    key: 'goal',
+    label: '目标管理指南',
+    title: '如何设置关系目标',
+    steps: [
+      '点击"添加目标"按钮',
+      '选择目标类型和优先级',
+      '设定目标完成日期',
+      '定期更新目标进度',
+      '完成目标获得成就感'
+    ]
   }
-}
+]
 
-const refreshData = () => {
-  loadData()
-}
-
-const createPlan = async () => {
-  try {
-    const result = await practicePlanAPI.createPlan(newPlan.value)
-    if (result.success) {
-      showCreateModal.value = false
-      // 重置表单
-      newPlan.value = {
-        userId: 1,
-        title: '',
-        description: '',
-        type: 1,
-        status: 0,
-        priority: 2,
-        progress: 0,
-        isPublic: 0
-      }
-      // 重新加载数据
-      await loadData()
-    }
-  } catch (error) {
-    console.error('创建计划失败:', error)
-  }
-}
-
-const showUpdateModal = ref(false)
-
-const openUpdateModal = (plan: PracticePlan) => {
-  editingPlan.value = { ...plan }
-  showUpdateModal.value = true
-}
-
-const updatePlan = async () => {
-  if (!editingPlan.value) return
-  
-  try {
-    const result = await practicePlanAPI.updatePlan(editingPlan.value)
-    if (result.success) {
-      showUpdateModal.value = false
-      editingPlan.value = null
-      // 重新加载数据
-      await loadData()
-    }
-  } catch (error) {
-    console.error('更新计划失败:', error)
-  }
-}
-
-const startPlan = async (planId: number) => {
-  try {
-    await practicePlanAPI.updateStatus(planId, PLAN_STATUS.IN_PROGRESS)
-    await loadData()
-  } catch (error) {
-    console.error('开始计划失败:', error)
-  }
-}
-
-const completePlan = async (planId: number) => {
-  try {
-    await practicePlanAPI.updateStatus(planId, PLAN_STATUS.COMPLETED)
-    await practicePlanAPI.updateProgress(planId, 100)
-    await loadData()
-  } catch (error) {
-    console.error('完成计划失败:', error)
-  }
-}
-
-const deletePlan = async (planId: number) => {
-  if (!confirm('确定要删除这个计划吗？')) return
-  
-  try {
-    const result = await practicePlanAPI.deletePlan(planId)
-    if (result.success) {
-      await loadData()
-    }
-  } catch (error) {
-    console.error('删除计划失败:', error)
-  }
-}
-
-const getPlanStatusClass = (status: number) => {
-  switch (status) {
-    case PLAN_STATUS.NOT_STARTED: return 'status-not-started'
-    case PLAN_STATUS.IN_PROGRESS: return 'status-in-progress'
-    case PLAN_STATUS.COMPLETED: return 'status-completed'
-    case PLAN_STATUS.ABANDONED: return 'status-abandoned'
-    default: return ''
-  }
-}
-
-const getPriorityClass = (priority: number) => {
-  switch (priority) {
-    case 1: return 'priority-low'
-    case 2: return 'priority-medium'
-    case 3: return 'priority-high'
-    default: return ''
-  }
-}
-
-const formatDate = (dateStr: string | undefined) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('zh-CN')
-}
-
+// 生命周期
 onMounted(() => {
-  loadData()
+  loadMockData()
+  loadStats()
+  nextTick(() => {
+    initCharts()
+  })
+})
+
+// 图表相关
+let trajectoryChart: Chart | null = null
+let trendChart: Chart | null = null
+
+const initCharts = () => {
+  // 初始化成长轨迹图表
+  const trajectoryCtx = document.querySelector('#trajectoryChart') as HTMLCanvasElement
+  if (trajectoryCtx) {
+    trajectoryChart = new Chart(trajectoryCtx, {
+      type: 'line',
+      data: {
+        labels: trajectories.value.map(t => formatDate(t.recordDate)),
+        datasets: [{
+          label: '综合评分',
+          data: trajectories.value.map(t => t.overallScore || 0),
+          borderColor: '#3498db',
+          backgroundColor: 'rgba(52, 152, 219, 0.1)',
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: '成长轨迹趋势'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100
+          }
+        }
+      }
+    })
+  }
+
+  // 初始化成长趋势图表
+  const trendCtx = document.querySelector('#trendChart') as HTMLCanvasElement
+  if (trendCtx) {
+    trendChart = new Chart(trendCtx, {
+      type: 'radar',
+      data: {
+        labels: ['沟通质量', '信任程度', '相互支持', '亲密度'],
+        datasets: [{
+          label: '当前评分',
+          data: [
+            trajectories.value[0]?.communicationScore || 0,
+            trajectories.value[0]?.trustScore || 0,
+            trajectories.value[0]?.supportScore || 0,
+            trajectories.value[0]?.intimacyScore || 0
+          ],
+          backgroundColor: 'rgba(52, 152, 219, 0.2)',
+          borderColor: '#3498db',
+          pointBackgroundColor: '#3498db'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: '关系维度雷达图'
+          }
+        },
+        scales: {
+          r: {
+            beginAtZero: true,
+            max: 100
+          }
+        }
+      }
+    })
+  }
+}
+
+// 方法
+const loadMockData = () => {
+  // 模拟里程碑数据
+  milestones.value = [
+    {
+      id: '1',
+      milestoneType: 'first_meet',
+      title: '初次相遇',
+      description: '在朋友的聚会上第一次见面，感觉很有缘分',
+      milestoneDate: '2024-01-15',
+      location: '朋友家',
+      emotionScore: 8,
+      tags: ['缘分', '朋友聚会'],
+      isPublic: 1
+    },
+    {
+      id: '2',
+      milestoneType: 'first_date',
+      title: '第一次约会',
+      description: '一起看电影，聊了很多，感觉很投缘',
+      milestoneDate: '2024-01-20',
+      location: '电影院',
+      emotionScore: 9,
+      tags: ['约会', '电影', '聊天'],
+      isPublic: 1
+    },
+    {
+      id: '3',
+      milestoneType: 'confession',
+      title: '表白成功',
+      description: '在公园里表白，对方答应了，非常开心',
+      milestoneDate: '2024-02-14',
+      location: '公园',
+      emotionScore: 10,
+      tags: ['表白', '情人节', '公园'],
+      isPublic: 1
+    }
+  ]
+
+  // 模拟成长轨迹数据
+  trajectories.value = [
+    {
+      id: '1',
+      recordDate: '2024-12-20',
+      communicationScore: 85,
+      trustScore: 90,
+      supportScore: 88,
+      intimacyScore: 92,
+      overallScore: 89,
+      moodState: 'happy',
+      relationshipNotes: '今天沟通很顺畅，相互理解更深了',
+      improvementGoals: '继续保持开放和诚实的沟通'
+    },
+    {
+      id: '2',
+      recordDate: '2024-12-18',
+      communicationScore: 80,
+      trustScore: 85,
+      supportScore: 82,
+      intimacyScore: 88,
+      overallScore: 84,
+      moodState: 'content',
+      relationshipNotes: '关系稳定，相互支持',
+      improvementGoals: '增加一些浪漫的小惊喜'
+    }
+  ]
+
+  // 模拟目标数据
+  goals.value = [
+    {
+      id: '1',
+      goalType: 'communication',
+      title: '改善沟通方式',
+      description: '学习更有效的沟通技巧，减少误解',
+      targetDate: '2025-01-31',
+      priority: 1,
+      status: 0,
+      progress: 60
+    },
+    {
+      id: '2',
+      goalType: 'trust',
+      title: '建立更深层信任',
+      description: '通过行动证明彼此的信任',
+      targetDate: '2025-02-28',
+      priority: 2,
+      status: 0,
+      progress: 40
+    }
+  ]
+
+  // 模拟成就数据
+  achievements.value = [
+    {
+      id: '1',
+      title: '初次记录',
+      description: '完成第一次成长轨迹记录',
+      icon: '📝',
+      unlocked: true,
+      progress: 100,
+      maxProgress: 1
+    },
+    {
+      id: '2',
+      title: '里程碑收集者',
+      description: '创建5个里程碑',
+      icon: '🏆',
+      unlocked: false,
+      progress: 3,
+      maxProgress: 5
+    },
+    {
+      id: '3',
+      title: '目标达成者',
+      description: '完成3个关系目标',
+      icon: '🎯',
+      unlocked: false,
+      progress: 0,
+      maxProgress: 3
+    },
+    {
+      id: '4',
+      title: '持续记录',
+      description: '连续记录7天成长轨迹',
+      icon: '📊',
+      unlocked: false,
+      progress: 2,
+      maxProgress: 7
+    }
+  ]
+}
+
+const loadStats = () => {
+  // 模拟统计数据
+  stats.value = {
+    milestone: {
+      totalCount: milestones.value.length,
+      typeStats: {}
+    },
+    trajectory: {
+      totalCount: trajectories.value.length,
+      avgOverallScore: Math.round(
+        trajectories.value.reduce((sum, t) => sum + (t.overallScore || 0), 0) / trajectories.value.length
+      ),
+      maxScore: Math.max(...trajectories.value.map(t => t.overallScore || 0)),
+      minScore: Math.min(...trajectories.value.map(t => t.overallScore || 0))
+    },
+    goal: {
+      totalCount: goals.value.length,
+      completedCount: goals.value.filter(g => g.status === 1).length,
+      inProgressCount: goals.value.filter(g => g.status === 0).length,
+      completionRate: Math.round(
+        (goals.value.filter(g => g.status === 1).length / goals.value.length) * 100
+      )
+    }
+  }
+}
+
+const selectMilestone = (milestone: Milestone) => {
+  editingMilestone.value = milestone
+  milestoneForm.value = {
+    milestoneType: milestone.milestoneType,
+    title: milestone.title,
+    description: milestone.description || '',
+    milestoneDate: milestone.milestoneDate,
+    location: milestone.location || '',
+    emotionScore: milestone.emotionScore,
+    tagInput: milestone.tags ? milestone.tags.join(', ') : ''
+  }
+  showMilestoneForm.value = true
+}
+
+const closeMilestoneForm = () => {
+  showMilestoneForm.value = false
+  editingMilestone.value = null
+  milestoneForm.value = {
+    milestoneType: '',
+    title: '',
+    description: '',
+    milestoneDate: '',
+    location: '',
+    emotionScore: undefined,
+    tagInput: ''
+  }
+}
+
+const closeGoalForm = () => {
+  showGoalForm.value = false
+  editingGoal.value = null
+  goalForm.value = {
+    goalType: '',
+    title: '',
+    description: '',
+    targetDate: '',
+    priority: 2,
+    reward: ''
+  }
+}
+
+const saveMilestone = () => {
+  const tags = milestoneForm.value.tagInput
+    .split(',')
+    .map(tag => tag.trim())
+    .filter(tag => tag.length > 0)
+
+  if (editingMilestone.value) {
+    // 更新里程碑
+    const index = milestones.value.findIndex(m => m.id === editingMilestone.value?.id)
+    if (index !== -1) {
+      milestones.value[index] = {
+        ...editingMilestone.value,
+        ...milestoneForm.value,
+        tags
+      }
+    }
+  } else {
+    // 创建新里程碑
+    const newMilestone: Milestone = {
+      id: Date.now().toString(),
+      ...milestoneForm.value,
+      tags,
+      isPublic: 1
+    }
+    milestones.value.unshift(newMilestone)
+  }
+
+  closeMilestoneForm()
+  loadStats()
+}
+
+const saveGoal = () => {
+  if (editingGoal.value) {
+    // 更新目标
+    const index = goals.value.findIndex(g => g.id === editingGoal.value?.id)
+    if (index !== -1) {
+      goals.value[index] = {
+        ...editingGoal.value,
+        ...goalForm.value,
+        priority: Number(goalForm.value.priority)
+      }
+    }
+  } else {
+    // 创建新目标
+    const newGoal: Goal = {
+      id: Date.now().toString(),
+      ...goalForm.value,
+      priority: Number(goalForm.value.priority),
+      status: 0,
+      progress: 0
+    }
+    goals.value.unshift(newGoal)
+  }
+
+  closeGoalForm()
+  loadStats()
+}
+
+const saveTrajectory = () => {
+  const newTrajectory: Trajectory = {
+    id: Date.now().toString(),
+    recordDate: new Date().toISOString().split('T')[0],
+    ...trajectoryForm.value,
+    overallScore: calculateOverallScore(trajectoryForm.value)
+  }
+
+  trajectories.value.unshift(newTrajectory)
+  
+  // 重置表单
+  trajectoryForm.value = {
+    communicationScore: undefined,
+    trustScore: undefined,
+    supportScore: undefined,
+    intimacyScore: undefined,
+    moodState: '',
+    relationshipNotes: '',
+    improvementGoals: ''
+  }
+
+  loadStats()
+}
+
+const calculateOverallScore = (form: any) => {
+  const scores = [
+    form.communicationScore,
+    form.trustScore,
+    form.supportScore,
+    form.intimacyScore
+  ].filter(score => score !== undefined && score !== null)
+
+  return scores.length > 0 
+    ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length)
+    : 0
+}
+
+const updateGoalProgress = (goal: Goal) => {
+  const newProgress = Math.min(100, goal.progress + 20)
+  goal.progress = newProgress
+  
+  if (newProgress >= 100) {
+    goal.status = 1 // 已完成
+  }
+  
+  loadStats()
+}
+
+const editGoal = (goal: Goal) => {
+  editingGoal.value = goal
+  goalForm.value = {
+    goalType: goal.goalType,
+    title: goal.title,
+    description: goal.description || '',
+    targetDate: goal.targetDate,
+    priority: goal.priority,
+    reward: goal.reward || ''
+  }
+  showGoalForm.value = true
+}
+
+const completeGoal = (goal: Goal) => {
+  goal.status = 1
+  goal.progress = 100
+  loadStats()
+}
+
+// 工具方法
+const getMilestoneIcon = (type: string) => {
+  const icons: Record<string, string> = {
+    first_meet: '👋',
+    first_date: '🎬',
+    confession: '💝',
+    engagement: '💍',
+    wedding: '👰',
+    anniversary: '🎉',
+    travel: '✈️',
+    gift: '🎁',
+    conflict_resolution: '🤝',
+    breakthrough: '🚀'
+  }
+  return icons[type] || '📌'
+}
+
+const getMoodEmoji = (mood: string) => {
+  const emojis: Record<string, string> = {
+    happy: '😊',
+    excited: '🤩',
+    content: '😌',
+    calm: '😐',
+    neutral: '😐',
+    worried: '😟',
+    sad: '😢',
+    angry: '😠',
+    frustrated: '😤'
+  }
+  return emojis[mood] || '😐'
+}
+
+const getGoalTypeLabel = (type: string) => {
+  const labels: Record<string, string> = {
+    communication: '沟通改善',
+    trust: '信任建立',
+    intimacy: '亲密提升',
+    conflict: '冲突解决',
+    support: '相互支持'
+  }
+  return labels[type] || type
+}
+
+const getPriorityLabel = (priority: number) => {
+  const labels = ['', '高', '中', '低']
+  return labels[priority] || '中'
+}
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('zh-CN')
+}
+
+const getActiveGuide = () => {
+  return quickGuides.find(guide => guide.key === activeGuide.value) || quickGuides[0]
+}
+
+// 数据导出功能
+const exportData = () => {
+  const data = {
+    milestones: milestones.value,
+    trajectories: trajectories.value,
+    goals: goals.value,
+    achievements: achievements.value,
+    stats: stats.value,
+    exportDate: new Date().toISOString()
+  }
+  
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `growth-archive-${new Date().toISOString().split('T')[0]}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+const generateReport = () => {
+  const report = {
+    title: '成长档案报告',
+    date: new Date().toLocaleDateString('zh-CN'),
+    summary: {
+      totalMilestones: milestones.value.length,
+      totalTrajectories: trajectories.value.length,
+      totalGoals: goals.value.length,
+      completedGoals: goals.value.filter(g => g.status === 1).length,
+      avgScore: stats.value.trajectory?.avgOverallScore || 0
+    },
+    recommendations: generateRecommendations()
+  }
+  
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `growth-report-${new Date().toISOString().split('T')[0]}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+const generateRecommendations = () => {
+  const recommendations = []
+  
+  if (milestones.value.length < 3) {
+    recommendations.push('建议多记录一些关系中的重要时刻，这些里程碑将成为你们关系发展的见证')
+  }
+  
+  if (stats.value.trajectory?.avgOverallScore < 70) {
+    recommendations.push('关系评分较低，建议多关注沟通和相互理解，可以尝试一些关系改善活动')
+  }
+  
+  if (goals.value.filter(g => g.status === 1).length === 0) {
+    recommendations.push('还没有完成的目标，建议设定一些具体可行的短期目标，逐步提升关系质量')
+  }
+  
+  return recommendations
+}
+
+// 计算属性
+const filteredMilestones = computed(() => {
+  let filtered = milestones.value
+  
+  if (milestoneSearch.value) {
+    filtered = filtered.filter(m => 
+      m.title.toLowerCase().includes(milestoneSearch.value.toLowerCase()) ||
+      m.description.toLowerCase().includes(milestoneSearch.value.toLowerCase())
+    )
+  }
+  
+  if (milestoneTypeFilter.value) {
+    filtered = filtered.filter(m => m.milestoneType === milestoneTypeFilter.value)
+  }
+  
+  return filtered
+})
+
+const filteredGoals = computed(() => {
+  let filtered = goals.value
+  
+  if (goalSearch.value) {
+    filtered = filtered.filter(g => 
+      g.title.toLowerCase().includes(goalSearch.value.toLowerCase()) ||
+      g.description.toLowerCase().includes(goalSearch.value.toLowerCase())
+    )
+  }
+  
+  if (goalTypeFilter.value) {
+    filtered = filtered.filter(g => g.goalType === goalTypeFilter.value)
+  }
+  
+  return filtered
 })
 </script>
 
-<style lang="scss" scoped>
-@use 'sass:color';
-@import '../styles/variables.scss';
-
-.growth-page {
-  padding: $spacing-lg;
+<style scoped lang="scss">
+.growth-archive {
   max-width: 1200px;
   margin: 0 auto;
-}
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  color: white;
 
-.page-header {
-  text-align: center;
-  margin-bottom: $spacing-xl;
-  
-  h1 {
-    font-size: $font-size-xxl;
-    font-weight: $font-weight-bold;
-    color: $text-primary;
-    margin-bottom: $spacing-sm;
-  }
-  
-  .subtitle {
-    color: $text-secondary;
-    font-size: $font-size-lg;
-  }
-}
-
-.stats-overview {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: $spacing-md;
-  margin-bottom: $spacing-xl;
-  
-  .stat-card {
-    background: $bg-section;
-    border: 1px solid $border-card;
-    border-radius: $radius-card;
-    padding: $spacing-lg;
+  .page-header {
     text-align: center;
-    
-    .stat-number {
-      font-size: $font-size-xxl;
-      font-weight: $font-weight-bold;
-      color: $color-secondary;
-      margin-bottom: $spacing-xs;
+    margin-bottom: 30px;
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
     }
-    
-    .stat-label {
-      color: $text-secondary;
-      font-size: $font-size-sm;
+
+    .subtitle {
+      font-size: 1.2rem;
+      opacity: 0.9;
+      margin-bottom: 25px;
     }
-  }
-}
 
-.actions-section {
-  display: flex;
-  gap: $spacing-md;
-  margin-bottom: $spacing-xl;
-  justify-content: center;
-}
+    .quick-start-guide {
+      max-width: 800px;
+      margin: 0 auto;
 
-.plans-section {
-  h2 {
-    font-size: $font-size-xl;
-    font-weight: $font-weight-semibold;
-    color: $text-primary;
-    margin-bottom: $spacing-lg;
-    text-align: center;
-  }
-}
+      .guide-tabs {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 20px;
 
-.loading {
-  text-align: center;
-  padding: $spacing-xl;
-  color: $text-secondary;
-  
-  .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid $border-card;
-    border-top: 3px solid $color-secondary;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto $spacing-md;
-  }
-}
+        .guide-tab {
+          padding: 10px 20px;
+          background: rgba(255, 255, 255, 0.2);
+          border: 2px solid transparent;
+          border-radius: 25px;
+          color: white;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          backdrop-filter: blur(10px);
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+          &:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+          }
 
-.empty-state {
-  text-align: center;
-  padding: $spacing-xl;
-  color: $text-secondary;
-  
-  svg {
-    margin-bottom: $spacing-md;
-    opacity: 0.5;
-  }
-  
-  h3 {
-    color: $text-primary;
-    margin-bottom: $spacing-sm;
-  }
-  
-  p {
-    margin-bottom: $spacing-lg;
-  }
-}
+          &.active {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+          }
+        }
+      }
 
-.plans-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: $spacing-lg;
-}
+      .guide-content {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        color: #2c3e50;
+        animation: slideDown 0.3s ease;
 
-.plan-card {
-  background: $bg-section;
-  border: 1px solid $border-card;
-  border-radius: $radius-card;
-  padding: $spacing-lg;
-  transition: all 0.3s;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-  
-  &.status-completed {
-    border-left: 4px solid $color-success;
-  }
-  
-  &.status-in-progress {
-    border-left: 4px solid $color-secondary;
-  }
-  
-  &.status-not-started {
-    border-left: 4px solid $color-info;
-  }
-  
-  &.status-abandoned {
-    border-left: 4px solid $color-warning;
-  }
-}
+        .guide-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
 
-.plan-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: $spacing-md;
-  
-  .plan-type {
-    background: rgba($color-secondary, 0.1);
-    color: $color-secondary;
-    padding: $spacing-xs $spacing-sm;
-    border-radius: 12px;
-    font-size: $font-size-sm;
-    font-weight: $font-weight-medium;
-  }
-  
-  .plan-status {
-    font-size: $font-size-sm;
-    font-weight: $font-weight-medium;
-  }
-}
+          h3 {
+            margin: 0;
+            color: #34495e;
+            font-size: 1.3rem;
+          }
 
-.plan-title {
-  font-size: $font-size-lg;
-  font-weight: $font-weight-semibold;
-  color: $text-primary;
-  margin-bottom: $spacing-sm;
-}
+          .close-guide-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #7f8c8d;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
 
-.plan-description {
-  color: $text-secondary;
-  line-height: 1.6;
-  margin-bottom: $spacing-md;
-}
+            &:hover {
+              background: #ecf0f1;
+              color: #34495e;
+            }
+          }
+        }
 
-.plan-progress {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-  margin-bottom: $spacing-md;
-  
-  .progress-bar {
-    flex: 1;
-    height: 8px;
-    background: rgba($color-secondary, 0.2);
-    border-radius: 4px;
-    overflow: hidden;
-    
-    .progress-fill {
-      height: 100%;
-      background: $color-secondary;
-      transition: width 0.3s ease;
+        .guide-steps {
+          .guide-step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+
+            &:hover {
+              background: #e9ecef;
+              transform: translateX(5px);
+            }
+
+            .step-number {
+              background: #3498db;
+              color: white;
+              width: 25px;
+              height: 25px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: 600;
+              margin-right: 15px;
+              flex-shrink: 0;
+            }
+
+            p {
+              margin: 0;
+              color: #34495e;
+              line-height: 1.5;
+            }
+          }
+        }
+      }
     }
   }
-  
-  .progress-text {
-    font-size: $font-size-sm;
-    color: $text-secondary;
-    min-width: 40px;
-  }
-}
 
-.plan-meta {
-  margin-bottom: $spacing-md;
-  
-  .meta-item {
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .nav-tabs {
     display: flex;
-    justify-content: space-between;
-    margin-bottom: $spacing-xs;
-    font-size: $font-size-sm;
-    
-    .label {
-      color: $text-secondary;
-    }
-    
-    .value {
-      color: $text-primary;
-      font-weight: $font-weight-medium;
-      
-      &.priority-high {
-        color: $color-danger;
+    justify-content: center;
+    margin-bottom: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 25px;
+    padding: 5px;
+    backdrop-filter: blur(10px);
+
+    .nav-tab {
+      padding: 12px 24px;
+      border: none;
+      background: transparent;
+      color: white;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 1rem;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
       }
-      
-      &.priority-medium {
-        color: $color-warning;
-      }
-      
-      &.priority-low {
-        color: $color-success;
+
+      &.active {
+        background: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
       }
     }
   }
-}
 
-.plan-actions {
-  display: flex;
-  gap: $spacing-xs;
-  flex-wrap: wrap;
-  
-  button {
-    padding: $spacing-xs $spacing-sm;
-    border: none;
-    border-radius: $radius-button;
-    font-size: $font-size-sm;
-    cursor: pointer;
-    transition: all 0.2s;
-    
-    &:hover {
-      transform: translateY(-1px);
+  .tab-content {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    color: #2c3e50;
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+
+      h2 {
+        margin: 0;
+        color: #34495e;
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+
+        .search-filter {
+          display: flex;
+          gap: 10px;
+
+          .search-input {
+            padding: 8px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            width: 200px;
+            transition: border-color 0.3s ease;
+
+            &:focus {
+              outline: none;
+              border-color: #3498db;
+            }
+          }
+
+          .filter-select {
+            padding: 8px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+
+            &:focus {
+              outline: none;
+              border-color: #3498db;
+            }
+          }
+        }
+
+        .add-btn {
+          padding: 10px 20px;
+          background: #3498db;
+          color: white;
+          border: none;
+          border-radius: 25px;
+          cursor: pointer;
+          font-size: 0.9rem;
+          transition: all 0.3s ease;
+
+          &:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+          }
+        }
+      }
     }
   }
-  
-  .btn-start {
-    background: $color-success;
-    color: white;
-    
-    &:hover {
-      background: color.adjust($color-success, $lightness: -10%);
+
+  // 里程碑样式
+  .milestones-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+
+    .milestone-card {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+
+      &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        border-color: #3498db;
+      }
+
+      .milestone-icon {
+        font-size: 2rem;
+        margin-bottom: 15px;
+        text-align: center;
+      }
+
+      .milestone-content {
+        h3 {
+          margin: 0 0 10px 0;
+          color: #2c3e50;
+          font-size: 1.2rem;
+        }
+
+        p {
+          margin: 0 0 15px 0;
+          color: #7f8c8d;
+          line-height: 1.5;
+        }
+
+        .milestone-meta {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-bottom: 15px;
+
+          span {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            background: #ecf0f1;
+            border-radius: 12px;
+            color: #34495e;
+          }
+
+          .emotion-score {
+            background: #e74c3c;
+            color: white;
+          }
+        }
+
+        .milestone-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 5px;
+
+          .tag {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            background: #3498db;
+            color: white;
+            border-radius: 10px;
+          }
+        }
+      }
     }
   }
-  
-  .btn-update {
-    background: $color-info;
-    color: white;
-    
-    &:hover {
-      background: color.adjust($color-info, $lightness: -10%);
+
+  // 里程碑表单样式
+  .milestone-form-overlay,
+  .goal-form-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+
+    .milestone-form,
+    .goal-form {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+
+      .form-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+
+        h3 {
+          margin: 0;
+          color: #2c3e50;
+        }
+
+        .close-btn {
+          background: none;
+          border: none;
+          font-size: 1.5rem;
+          cursor: pointer;
+          color: #7f8c8d;
+        }
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+
+        label {
+          display: block;
+          margin-bottom: 8px;
+          color: #34495e;
+          font-weight: 600;
+        }
+
+        input, select, textarea {
+          width: 100%;
+          padding: 12px;
+          border: 2px solid #e9ecef;
+          border-radius: 10px;
+          font-size: 1rem;
+          transition: border-color 0.3s ease;
+
+          &:focus {
+            outline: none;
+            border-color: #3498db;
+          }
+        }
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: flex-end;
+
+        button {
+          padding: 12px 24px;
+          border: none;
+          border-radius: 10px;
+          cursor: pointer;
+          font-size: 1rem;
+          transition: all 0.3s ease;
+
+          &.cancel-btn {
+            background: #95a5a6;
+            color: white;
+
+            &:hover {
+              background: #7f8c8d;
+            }
+          }
+
+          &.save-btn {
+            background: #3498db;
+            color: white;
+
+            &:hover {
+              background: #2980b9;
+            }
+          }
+        }
+      }
     }
   }
-  
-  .btn-complete {
-    background: $color-secondary;
-    color: white;
-    
-    &:hover {
-      background: color.adjust($color-secondary, $lightness: -10%);
+
+  // 成长轨迹样式
+  .trajectory-section {
+    .trajectory-form {
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 30px;
+
+      h3 {
+        margin: 0 0 20px 0;
+        color: #2c3e50;
+      }
+
+      .score-inputs {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+
+        .score-group {
+          label {
+            display: block;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-weight: 600;
+          }
+
+          input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+          }
+        }
+      }
+
+      .save-trajectory-btn {
+        width: 100%;
+        padding: 15px;
+        background: #27ae60;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: #229954;
+          transform: translateY(-2px);
+        }
+      }
+    }
+
+    .trajectory-chart {
+      min-height: 300px;
+      margin-bottom: 30px;
+    }
+
+    .trajectory-list {
+      h3 {
+        margin: 0 0 20px 0;
+        color: #2c3e50;
+      }
+
+      .trajectory-items {
+        .trajectory-item {
+          background: white;
+          border-radius: 15px;
+          padding: 20px;
+          margin-bottom: 15px;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+          cursor: pointer;
+          transition: all 0.3s ease;
+
+          &:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+          }
+
+          .trajectory-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+
+            .trajectory-date {
+              font-weight: 600;
+              color: #2c3e50;
+              font-size: 1.1rem;
+            }
+
+            .trajectory-mood {
+              font-size: 0.9rem;
+              padding: 5px 10px;
+              background: #ecf0f1;
+              border-radius: 15px;
+              color: #34495e;
+            }
+          }
+
+          .trajectory-scores {
+            margin-bottom: 15px;
+
+            .score-row {
+              display: flex;
+              gap: 20px;
+              margin-bottom: 8px;
+
+              &.overall {
+                border-top: 1px solid #ecf0f1;
+                padding-top: 8px;
+                margin-top: 8px;
+
+                .score-item.overall {
+                  font-weight: 600;
+                  color: #3498db;
+                }
+              }
+
+              .score-item {
+                font-size: 0.9rem;
+                color: #7f8c8d;
+              }
+            }
+          }
+
+          .trajectory-notes {
+            margin-bottom: 15px;
+
+            p {
+              margin: 0;
+              color: #34495e;
+              font-style: italic;
+              line-height: 1.5;
+            }
+          }
+
+          .trajectory-actions {
+            display: flex;
+            gap: 10px;
+
+            button {
+              padding: 6px 12px;
+              border: none;
+              border-radius: 6px;
+              cursor: pointer;
+              font-size: 0.8rem;
+              transition: all 0.3s ease;
+
+              &.edit-trajectory-btn {
+                background: #9b59b6;
+                color: white;
+
+                &:hover {
+                  background: #8e44ad;
+                }
+              }
+
+              &.delete-trajectory-btn {
+                background: #e74c3c;
+                color: white;
+
+                &:hover {
+                  background: #c0392b;
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
-  
-  .btn-edit {
-    background: $color-warning;
-    color: white;
-    
-    &:hover {
-      background: color.adjust($color-warning, $lightness: -10%);
+
+  // 目标样式
+  .goals-section {
+    .goal-card {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+
+      &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
+
+      &.0 { // 进行中
+        border-left: 4px solid #3498db;
+      }
+
+      &.1 { // 已完成
+        border-left: 4px solid #27ae60;
+        opacity: 0.8;
+      }
+
+      &.2 { // 已延期
+        border-left: 4px solid #f39c12;
+      }
+
+      &.3 { // 已放弃
+        border-left: 4px solid #e74c3c;
+        opacity: 0.6;
+      }
+
+      .goal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+
+        h3 {
+          margin: 0;
+          color: #2c3e50;
+          font-size: 1.2rem;
+        }
+
+        .goal-type {
+          font-size: 0.8rem;
+          padding: 4px 8px;
+          background: #ecf0f1;
+          border-radius: 12px;
+          color: #34495e;
+        }
+      }
+
+      .goal-description {
+        margin: 0 0 20px 0;
+        color: #7f8c8d;
+        line-height: 1.5;
+      }
+
+      .goal-progress {
+        margin-bottom: 20px;
+
+        .progress-bar {
+          width: 100%;
+          height: 8px;
+          background: #ecf0f1;
+          border-radius: 4px;
+          overflow: hidden;
+          margin-bottom: 8px;
+
+          .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #27ae60);
+            transition: width 0.3s ease;
+          }
+        }
+
+        .progress-text {
+          font-size: 0.9rem;
+          color: #34495e;
+          font-weight: 600;
+        }
+      }
+
+      .goal-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+
+        .target-date {
+          font-size: 0.8rem;
+          color: #7f8c8d;
+        }
+
+        .priority {
+          font-size: 0.8rem;
+          padding: 4px 8px;
+          border-radius: 12px;
+          color: white;
+
+          &.priority-1 {
+            background: #e74c3c;
+          }
+
+          &.priority-2 {
+            background: #f39c12;
+          }
+
+          &.priority-3 {
+            background: #95a5a6;
+          }
+        }
+      }
+
+      .goal-actions {
+        display: flex;
+        gap: 10px;
+
+        button {
+          padding: 8px 16px;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 0.9rem;
+          transition: all 0.3s ease;
+
+          &.edit-btn {
+            background: #9b59b6;
+            color: white;
+
+            &:hover {
+              background: #8e44ad;
+            }
+          }
+
+          &.progress-btn {
+            background: #3498db;
+            color: white;
+
+            &:hover {
+              background: #2980b9;
+            }
+          }
+
+          &.complete-btn {
+            background: #27ae60;
+            color: white;
+
+            &:hover {
+              background: #229954;
+            }
+          }
+        }
+      }
     }
   }
-  
-  .btn-delete {
-    background: $color-danger;
-    color: white;
-    
-    &:hover {
-      background: color.adjust($color-danger, $lightness: -10%);
+
+  // 统计分析样式
+  .analytics-section {
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+
+      h2 {
+        margin: 0;
+        color: #34495e;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 15px;
+
+        .export-btn, .report-btn {
+          padding: 10px 20px;
+          border: none;
+          border-radius: 20px;
+          cursor: pointer;
+          font-size: 0.9rem;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          &:hover {
+            transform: translateY(-2px);
+          }
+        }
+
+        .export-btn {
+          background: #27ae60;
+          color: white;
+
+          &:hover {
+            background: #229954;
+          }
+        }
+
+        .report-btn {
+          background: #9b59b6;
+          color: white;
+
+          &:hover {
+            background: #8e44ad;
+          }
+        }
+      }
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+
+      .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-icon {
+          font-size: 2.5rem;
+          margin-bottom: 15px;
+        }
+
+        .stat-content {
+          h3 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 2rem;
+            font-weight: 700;
+          }
+
+          p {
+            margin: 0;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+          }
+        }
+      }
+    }
+
+    .trend-chart {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      margin-bottom: 30px;
+
+      h3 {
+        margin: 0 0 20px 0;
+        color: #2c3e50;
+      }
+
+      .chart-container {
+        min-height: 300px;
+        position: relative;
+      }
+    }
+
+    .achievements-section {
+      h3 {
+        margin: 0 0 20px 0;
+        color: #2c3e50;
+      }
+
+      .achievements-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+
+        .achievement-card {
+          background: white;
+          border-radius: 15px;
+          padding: 20px;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+          transition: all 0.3s ease;
+          border: 2px solid transparent;
+
+          &:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+          }
+
+          &.unlocked {
+            border-color: #f39c12;
+            background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+
+            .achievement-icon {
+              animation: achievementUnlock 0.6s ease;
+            }
+          }
+
+          .achievement-icon {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 15px;
+          }
+
+          .achievement-content {
+            h4 {
+              margin: 0 0 10px 0;
+              color: #2c3e50;
+              font-size: 1.1rem;
+              text-align: center;
+            }
+
+            p {
+              margin: 0 0 15px 0;
+              color: #7f8c8d;
+              text-align: center;
+              line-height: 1.5;
+            }
+
+            .achievement-progress {
+              display: flex;
+              align-items: center;
+              gap: 10px;
+
+              .progress-bar {
+                flex: 1;
+                height: 8px;
+                background: #ecf0f1;
+                border-radius: 4px;
+                overflow: hidden;
+
+                .progress-fill {
+                  height: 100%;
+                  background: linear-gradient(90deg, #3498db, #27ae60);
+                  transition: width 0.3s ease;
+                }
+              }
+
+              span {
+                font-size: 0.8rem;
+                color: #34495e;
+                font-weight: 600;
+                min-width: 40px;
+              }
+            }
+          }
+        }
+      }
     }
   }
-}
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: $bg-section;
-  border-radius: $radius-card;
-  border: 1px solid $border-card;
-  width: 90%;
-  max-width: 600px;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: $spacing-lg;
-  border-bottom: 1px solid $border-card;
-  
-  h3 {
-    margin: 0;
-    color: $text-primary;
-  }
-  
-  .close-btn {
-    background: none;
-    border: none;
-    color: $text-secondary;
-    cursor: pointer;
-    padding: $spacing-xs;
-    border-radius: $radius-button;
-    
-    &:hover {
-      background: rgba($color-secondary, 0.1);
-      color: $color-secondary;
+  @keyframes achievementUnlock {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
     }
   }
-}
-
-.modal-body {
-  padding: $spacing-lg;
-}
-
-.form-group {
-  margin-bottom: $spacing-md;
-  
-  label {
-    display: block;
-    margin-bottom: $spacing-xs;
-    color: $text-primary;
-    font-weight: $font-weight-medium;
   }
-  
-  input, textarea, select {
-    width: 100%;
-    padding: $spacing-sm;
-    border: 1px solid $border-card;
-    border-radius: $radius-button;
-    background: $bg-app;
-    color: $text-primary;
-    font-size: $font-size-md;
-    
-    &:focus {
-      outline: none;
-      border-color: $color-secondary;
+
+  // 响应式设计
+  @media (max-width: 768px) {
+    .growth-archive {
+      padding: 15px;
+
+      .page-header h1 {
+        font-size: 2rem;
+      }
+
+      .nav-tabs {
+        flex-wrap: wrap;
+        gap: 10px;
+
+        .nav-tab {
+          padding: 10px 20px;
+          font-size: 0.9rem;
+        }
+      }
+
+      .tab-content {
+        padding: 20px;
+      }
+
+      .milestones-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .score-inputs {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
-    
-    &::placeholder {
-      color: $text-secondary;
-    }
   }
-  
-  textarea {
-    resize: vertical;
-    min-height: 80px;
-  }
-}
 
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: $spacing-md;
-}
-
-.progress-input {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-  
-  input[type="range"] {
-    flex: 1;
-  }
-  
-  .progress-value {
-    min-width: 50px;
-    text-align: center;
-    color: $text-secondary;
-  }
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-  cursor: pointer;
-  
-  input[type="checkbox"] {
-    width: auto;
-    margin: 0;
-  }
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: $spacing-sm;
-  padding: $spacing-lg;
-  border-top: 1px solid $border-card;
-}
-
-// 响应式设计
-@media (max-width: $breakpoint-md) {
-  .growth-page {
-    padding: $spacing-sm;
-  }
-  
-  .stats-overview {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .plans-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-  
-  .modal-content {
-    width: 95%;
-    margin: $spacing-sm;
-  }
-}
 </style>
