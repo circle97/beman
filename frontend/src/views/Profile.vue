@@ -81,6 +81,18 @@
         </div>
 
         <div class="nav-section">
+          <h3>社交管理</h3>
+          <div class="nav-items">
+            <div class="nav-item" @click="activeTab = 'follows'">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01.99L12 12l-2.99-3.01A2.5 2.5 0 0 0 7 8H5.46c-.8 0-1.54.37-2.01.99L1 18.5V22h2v-6h2.5l2.54-7.63A1.5 1.5 0 0 1 9.54 10H12l3.01 3.01A2.5 2.5 0 0 1 18.54 10H20l2.54 7.63A1.5 1.5 0 0 1 21.54 16H22v6h-2z"/>
+              </svg>
+              <span>关注管理</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-section">
           <h3>数据管理</h3>
           <div class="nav-items">
             <div class="nav-item" @click="activeTab = 'data'">
@@ -305,6 +317,107 @@
                 <input type="checkbox" v-model="systemSettings.debugMode">
                 <span class="slider"></span>
               </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 关注管理 -->
+        <div v-if="activeTab === 'follows'" class="tab-content">
+          <h3>关注管理</h3>
+          <div class="follow-tabs">
+            <button 
+              class="follow-tab" 
+              :class="{ active: followTab === 'following' }"
+              @click="followTab = 'following'"
+            >
+              我关注的 ({{ followingCount }})
+            </button>
+            <button 
+              class="follow-tab" 
+              :class="{ active: followTab === 'followers' }"
+              @click="followTab = 'followers'"
+            >
+              关注我的 ({{ followersCount }})
+            </button>
+          </div>
+          
+          <!-- 我关注的用户 -->
+          <div v-if="followTab === 'following'" class="follow-list">
+            <div v-if="followingLoading" class="loading">
+              <div class="loading-spinner"></div>
+              <p>加载中...</p>
+            </div>
+            <div v-else-if="followingList.length === 0" class="empty-state">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="64" height="64">
+                <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01.99L12 12l-2.99-3.01A2.5 2.5 0 0 0 7 8H5.46c-.8 0-1.54.37-2.01.99L1 18.5V22h2v-6h2.5l2.54-7.63A1.5 1.5 0 0 1 9.54 10H12l3.01 3.01A2.5 2.5 0 0 1 18.54 10H20l2.54 7.63A1.5 1.5 0 0 1 21.54 16H22v6h-2z"/>
+              </svg>
+              <h4>还没有关注任何人</h4>
+              <p>去社区发现有趣的人吧</p>
+            </div>
+            <div v-else class="user-list">
+              <div v-for="user in followingList" :key="user.id" class="user-item">
+                <div class="user-avatar">
+                  <img v-if="user.avatar" :src="user.avatar" :alt="user.nickname">
+                  <div v-else class="avatar-placeholder">
+                    {{ user.nickname?.charAt(0) || '用' }}
+                  </div>
+                </div>
+                <div class="user-info">
+                  <div class="user-name">{{ user.nickname || '匿名用户' }}</div>
+                  <div class="user-username">@{{ user.username }}</div>
+                </div>
+                <div class="user-actions">
+                  <button class="btn-secondary" @click="unfollowUser(user.id)">
+                    取消关注
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 关注我的用户 -->
+          <div v-if="followTab === 'followers'" class="follow-list">
+            <div v-if="followersLoading" class="loading">
+              <div class="loading-spinner"></div>
+              <p>加载中...</p>
+            </div>
+            <div v-else-if="followersList.length === 0" class="empty-state">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="64" height="64">
+                <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01.99L1 18.5V22h2v-6h2.5l2.54-7.63A1.5 1.5 0 0 1 9.54 10H12l3.01 3.01A2.5 2.5 0 0 1 18.54 10H20l2.54 7.63A1.5 1.5 0 0 1 21.54 16H22v6h-2z"/>
+              </svg>
+              <h4>还没有人关注你</h4>
+              <p>多发帖子和评论，让更多人认识你</p>
+            </div>
+            <div v-else class="user-list">
+              <div v-for="user in followersList" :key="user.id" class="user-item">
+                <div class="user-avatar">
+                  <img v-if="user.avatar" :src="user.avatar" :alt="user.nickname">
+                  <div v-else class="avatar-placeholder">
+                    {{ user.nickname?.charAt(0) || '用' }}
+                  </div>
+                </div>
+                <div class="user-info">
+                  <div class="user-name">{{ user.nickname || '匿名用户' }}</div>
+                  <div class="user-username">@{{ user.username }}</div>
+                </div>
+                <div class="user-actions">
+                  <button 
+                    class="btn-primary" 
+                    @click="followUser(user.id)"
+                    v-if="!user.isFollowing"
+                  >
+                    关注
+                  </button>
+                  <button 
+                    class="btn-secondary" 
+                    @click="unfollowUser(user.id)"
+                    v-else
+                  >
+                    取消关注
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -370,7 +483,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useUserStore } from '../stores/user'
 import type { User } from '../types/user'
 
@@ -381,6 +494,13 @@ const activeTab = ref('account')
 const showEditModal = ref(false)
 const showPasswordModal = ref(false)
 const privacyLevel = ref(0)
+const followTab = ref('following')
+const followingLoading = ref(false)
+const followersLoading = ref(false)
+const followingList = ref<any[]>([])
+const followersList = ref<any[]>([])
+const followingCount = ref(0)
+const followersCount = ref(0)
 const notificationSettings = reactive({
   email: true,
   sms: false
@@ -549,6 +669,61 @@ const updateSystemSettings = async () => {
   }
 }
 
+// 关注管理方法
+const loadFollowingList = async () => {
+  followingLoading.value = true
+  try {
+    // TODO: 调用API获取关注列表
+    // const result = await getUserFollowList({ type: 'following' })
+    // followingList.value = result.records
+    // followingCount.value = result.total
+  } catch (error) {
+    console.error('加载关注列表失败:', error)
+  } finally {
+    followingLoading.value = false
+  }
+}
+
+const loadFollowersList = async () => {
+  followersLoading.value = true
+  try {
+    // TODO: 调用API获取粉丝列表
+    // const result = await getUserFollowList({ type: 'followers' })
+    // followersList.value = result.records
+    // followersCount.value = result.total
+  } catch (error) {
+    console.error('加载粉丝列表失败:', error)
+  } finally {
+    followersLoading.value = false
+  }
+}
+
+const followUser = async (userId: number) => {
+  try {
+    // TODO: 调用API关注用户
+    // await followUser(userId)
+    // 重新加载列表
+    await loadFollowersList()
+  } catch (error) {
+    console.error('关注用户失败:', error)
+  }
+}
+
+const unfollowUser = async (userId: number) => {
+  try {
+    // TODO: 调用API取消关注用户
+    // await unfollowUser(userId)
+    // 重新加载列表
+    if (followTab.value === 'following') {
+      await loadFollowingList()
+    } else {
+      await loadFollowersList()
+    }
+  } catch (error) {
+    console.error('取消关注失败:', error)
+  }
+}
+
 // 生命周期
 onMounted(async () => {
   if (!user.value) {
@@ -559,6 +734,15 @@ onMounted(async () => {
     editForm.nickname = user.value.nickname || ''
     editForm.email = user.value.email || ''
     editForm.phone = user.value.phone || ''
+  }
+})
+
+// 监听标签页变化，加载相应的数据
+watch(followTab, (newTab: string) => {
+  if (newTab === 'following') {
+    loadFollowingList()
+  } else if (newTab === 'followers') {
+    loadFollowersList()
   }
 })
 </script>
@@ -762,39 +946,162 @@ onMounted(async () => {
       font-weight: $font-weight-semibold;
     }
 
-    .setting-group {
-      display: flex;
-      align-items: center;
-      padding: $spacing-md 0;
-      border-bottom: 1px solid $border-color;
+      .setting-group {
+    display: flex;
+    align-items: center;
+    padding: $spacing-md 0;
+    border-bottom: 1px solid $border-color;
 
-      &:last-child {
-        border-bottom: none;
-      }
+    &:last-child {
+      border-bottom: none;
+    }
 
-      .setting-label {
-        width: 120px;
-        font-weight: $font-weight-medium;
-        color: $text-primary;
-      }
+    .setting-label {
+      width: 120px;
+      font-weight: $font-weight-medium;
+      color: $text-primary;
+    }
 
-      .setting-value {
-        flex: 1;
-        color: $text-secondary;
+    .setting-value {
+      flex: 1;
+      color: $text-secondary;
 
-        .privacy-select,
-        .theme-select {
-          padding: $spacing-xs $spacing-sm;
-          border: 1px solid $border-color;
-          border-radius: $border-radius;
-          background: white;
-        }
-      }
-
-      button {
-        margin-left: $spacing-md;
+      .privacy-select,
+      .theme-select {
+        padding: $spacing-xs $spacing-sm;
+        border: 1px solid $border-color;
+        border-radius: $border-radius;
+        background: white;
       }
     }
+
+    button {
+      margin-left: $spacing-md;
+    }
+  }
+
+  // 关注管理样式
+  .follow-tabs {
+    display: flex;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-lg;
+    
+    .follow-tab {
+      padding: $spacing-sm $spacing-md;
+      background: none;
+      border: 1px solid $border-color;
+      color: $text-secondary;
+      cursor: pointer;
+      border-radius: $border-radius;
+      transition: all 0.2s;
+      
+      &.active {
+        background: $primary-color;
+        color: white;
+        border-color: $primary-color;
+      }
+      
+      &:hover:not(.active) {
+        background: $bg-hover;
+        border-color: $primary-color;
+        color: $primary-color;
+      }
+    }
+  }
+
+  .follow-list {
+    .loading {
+      text-align: center;
+      padding: $spacing-xl;
+      color: $text-secondary;
+      
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid $border-color;
+        border-top: 3px solid $primary-color;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto $spacing-md;
+      }
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: $spacing-xl;
+      color: $text-secondary;
+      
+      svg {
+        margin-bottom: $spacing-md;
+        opacity: 0.5;
+      }
+      
+      h4 {
+        color: $text-primary;
+        margin-bottom: $spacing-sm;
+      }
+    }
+    
+    .user-list {
+      .user-item {
+        display: flex;
+        align-items: center;
+        padding: $spacing-md;
+        border-bottom: 1px solid $border-color;
+        
+        &:last-child {
+          border-bottom: none;
+        }
+        
+        .user-avatar {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          overflow: hidden;
+          margin-right: $spacing-md;
+          
+          img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+          
+          .avatar-placeholder {
+            width: 100%;
+            height: 100%;
+            background: $primary-color;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: $font-weight-bold;
+            font-size: $font-size-lg;
+          }
+        }
+        
+        .user-info {
+          flex: 1;
+          
+          .user-name {
+            font-weight: $font-weight-medium;
+            color: $text-primary;
+            margin-bottom: $spacing-xs;
+          }
+          
+          .user-username {
+            font-size: $font-size-sm;
+            color: $text-secondary;
+          }
+        }
+        
+        .user-actions {
+          button {
+            min-width: 80px;
+          }
+        }
+      }
+    }
+  }
   }
 }
 

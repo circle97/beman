@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.beman.mapper.CommentMapper">
+
+    <!-- 评论结果映射 -->
+    <resultMap id="CommentVOMap" type="com.beman.model.vo.CommentVO">
+        <id column="id" property="id"/>
+        <result column="post_id" property="postId"/>
+        <result column="content" property="content"/>
+        <result column="author_id" property="authorId"/>
+        <result column="author_name" property="authorName"/>
+        <result column="author_avatar" property="authorAvatar"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="reply_user_id" property="replyUserId"/>
+        <result column="reply_user_name" property="replyUserName"/>
+        <result column="like_count" property="likeCount"/>
+        <result column="is_anonymous" property="isAnonymous"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 分页查询评论列表 -->
+    <select id="selectCommentPage" resultMap="CommentVOMap">
+        SELECT 
+            c.id,
+            c.post_id,
+            c.content,
+            c.author_id,
+            c.author_name,
+            c.author_avatar,
+            c.parent_id,
+            c.reply_user_id,
+            c.reply_user_name,
+            c.like_count,
+            c.is_anonymous,
+            c.status,
+            c.create_time,
+            c.update_time
+        FROM comment c
+        WHERE c.deleted = 0
+        <if test="postId != null">
+            AND c.post_id = #{postId}
+        </if>
+        <if test="parentId != null">
+            AND c.parent_id = #{parentId}
+        </if>
+        <if test="parentId == null">
+            AND c.parent_id IS NULL
+        </if>
+        AND c.status = 0
+        <choose>
+            <when test="sortType == 1">
+                ORDER BY c.create_time ASC
+            </when>
+            <when test="sortType == 2">
+                ORDER BY c.create_time DESC
+            </when>
+            <when test="sortType == 3">
+                ORDER BY c.like_count DESC, c.create_time DESC
+            </when>
+            <otherwise>
+                ORDER BY c.create_time DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 查询评论的子评论数量 -->
+    <select id="selectChildrenCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM comment
+        WHERE deleted = 0 
+        AND parent_id = #{commentId}
+        AND status = 0
+    </select>
+
+    <!-- 查询评论的子评论列表 -->
+    <select id="selectChildren" resultMap="CommentVOMap">
+        SELECT 
+            c.id,
+            c.post_id,
+            c.content,
+            c.author_id,
+            c.author_name,
+            c.author_avatar,
+            c.parent_id,
+            c.reply_user_id,
+            c.reply_user_name,
+            c.like_count,
+            c.is_anonymous,
+            c.status,
+            c.create_time,
+            c.update_time
+        FROM comment c
+        WHERE c.deleted = 0
+        AND c.parent_id = #{commentId}
+        AND c.status = 0
+        ORDER BY c.create_time ASC
+    </select>
+
+    <!-- 查询用户是否已点赞评论 -->
+    <select id="selectIsLiked" resultType="java.lang.Boolean">
+        SELECT COUNT(*) > 0
+        FROM comment_like
+        WHERE comment_id = #{commentId}
+        AND user_id = #{userId}
+        AND deleted = 0
+    </select>
+
+    <!-- 更新评论点赞数 -->
+    <update id="updateLikeCount">
+        UPDATE comment 
+        SET like_count = like_count + #{increment},
+            update_time = NOW()
+        WHERE id = #{commentId}
+        AND deleted = 0
+    </update>
+
+</mapper>

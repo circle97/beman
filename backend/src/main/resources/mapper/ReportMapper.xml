@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.beman.mapper.ReportMapper">
+
+    <!-- 举报结果映射 -->
+    <resultMap id="ReportVOMap" type="com.beman.model.vo.ReportVO">
+        <id column="id" property="id"/>
+        <result column="reporter_id" property="reporterId"/>
+        <result column="reporter_name" property="reporterName"/>
+        <result column="content_type" property="contentType"/>
+        <result column="content_id" property="contentId"/>
+        <result column="content_summary" property="contentSummary"/>
+        <result column="reason_type" property="reasonType"/>
+        <result column="reason_description" property="reasonDescription"/>
+        <result column="description" property="description"/>
+        <result column="evidence" property="evidence"/>
+        <result column="status" property="status"/>
+        <result column="status_description" property="statusDescription"/>
+        <result column="result" property="result"/>
+        <result column="handler_id" property="handlerId"/>
+        <result column="handler_name" property="handlerName"/>
+        <result column="handle_time" property="handleTime"/>
+        <result column="priority" property="priority"/>
+        <result column="priority_description" property="priorityDescription"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 分页查询举报列表 -->
+    <select id="selectReportPage" resultMap="ReportVOMap">
+        SELECT 
+            r.id,
+            r.reporter_id,
+            r.reporter_name,
+            r.content_type,
+            r.content_id,
+            CASE 
+                WHEN r.content_type = 1 THEN (SELECT LEFT(p.content, 100) FROM post p WHERE p.id = r.content_id)
+                WHEN r.content_type = 2 THEN (SELECT LEFT(c.content, 100) FROM comment c WHERE c.id = r.content_id)
+                WHEN r.content_type = 3 THEN (SELECT CONCAT('用户: ', u.username) FROM user u WHERE u.id = r.content_id)
+                ELSE '其他内容'
+            END as content_summary,
+            r.reason_type,
+            CASE r.reason_type
+                WHEN 1 THEN '垃圾信息'
+                WHEN 2 THEN '不当内容'
+                WHEN 3 THEN '恶意行为'
+                WHEN 4 THEN '版权问题'
+                WHEN 5 THEN '其他'
+                ELSE '未知'
+            END as reason_description,
+            r.description,
+            r.evidence,
+            r.status,
+            CASE r.status
+                WHEN 0 THEN '待处理'
+                WHEN 1 THEN '处理中'
+                WHEN 2 THEN '已处理'
+                WHEN 3 THEN '已驳回'
+                WHEN 4 THEN '已关闭'
+                ELSE '未知'
+            END as status_description,
+            r.result,
+            r.handler_id,
+            r.handler_name,
+            r.handle_time,
+            r.priority,
+            CASE r.priority
+                WHEN 1 THEN '低'
+                WHEN 2 THEN '中'
+                WHEN 3 THEN '高'
+                WHEN 4 THEN '紧急'
+                ELSE '未知'
+            END as priority_description,
+            r.create_time,
+            r.update_time
+        FROM report r
+        WHERE r.deleted = 0
+        <if test="status != null">
+            AND r.status = #{status}
+        </if>
+        <if test="contentType != null">
+            AND r.content_type = #{contentType}
+        </if>
+        <if test="priority != null">
+            AND r.priority = #{priority}
+        </if>
+        <if test="handlerId != null">
+            AND r.handler_id = #{handlerId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                r.reporter_name LIKE CONCAT('%', #{keyword}, '%')
+                OR r.description LIKE CONCAT('%', #{keyword}, '%')
+                OR r.result LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        ORDER BY r.priority DESC, r.create_time DESC
+    </select>
+
+    <!-- 查询举报详情 -->
+    <select id="selectReportDetail" resultMap="ReportVOMap">
+        SELECT 
+            r.id,
+            r.reporter_id,
+            r.reporter_name,
+            r.content_type,
+            r.content_id,
+            CASE 
+                WHEN r.content_type = 1 THEN (SELECT LEFT(p.content, 200) FROM post p WHERE p.id = r.content_id)
+                WHEN r.content_type = 2 THEN (SELECT LEFT(c.content, 200) FROM comment c WHERE c.id = r.content_id)
+                WHEN r.content_type = 3 THEN (SELECT CONCAT('用户: ', u.username, ' (', u.nickname, ')') FROM user u WHERE u.id = r.content_id)
+                ELSE '其他内容'
+            END as content_summary,
+            r.reason_type,
+            CASE r.reason_type
+                WHEN 1 THEN '垃圾信息'
+                WHEN 2 THEN '不当内容'
+                WHEN 3 THEN '恶意行为'
+                WHEN 4 THEN '版权问题'
+                WHEN 5 THEN '其他'
+                ELSE '未知'
+            END as reason_description,
+            r.description,
+            r.evidence,
+            r.status,
+            CASE r.status
+                WHEN 0 THEN '待处理'
+                WHEN 1 THEN '处理中'
+                WHEN 2 THEN '已处理'
+                WHEN 3 THEN '已驳回'
+                WHEN 4 THEN '已关闭'
+                ELSE '未知'
+            END as status_description,
+            r.result,
+            r.handler_id,
+            r.handler_name,
+            r.handle_time,
+            r.priority,
+            CASE r.priority
+                WHEN 1 THEN '低'
+                WHEN 2 THEN '中'
+                WHEN 3 THEN '高'
+                WHEN 4 THEN '紧急'
+                ELSE '未知'
+            END as priority_description,
+            r.create_time,
+            r.update_time
+        FROM report r
+        WHERE r.id = #{id}
+        AND r.deleted = 0
+    </select>
+
+    <!-- 查询用户的举报历史 -->
+    <select id="selectUserReports" resultMap="ReportVOMap">
+        SELECT 
+            r.id,
+            r.reporter_id,
+            r.reporter_name,
+            r.content_type,
+            r.content_id,
+            r.reason_type,
+            r.description,
+            r.evidence,
+            r.status,
+            r.result,
+            r.handler_id,
+            r.handler_name,
+            r.handle_time,
+            r.priority,
+            r.create_time,
+            r.update_time
+        FROM report r
+        WHERE r.reporter_id = #{reporterId}
+        AND r.deleted = 0
+        ORDER BY r.create_time DESC
+    </select>
+
+    <!-- 查询内容的举报数量 -->
+    <select id="selectContentReportCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM report
+        WHERE content_type = #{contentType}
+        AND content_id = #{contentId}
+        AND status IN (0, 1) -- 只统计待处理和处理中的举报
+        AND deleted = 0
+    </select>
+
+    <!-- 更新举报状态 -->
+    <update id="updateReportStatus">
+        UPDATE report 
+        SET status = #{status},
+            result = #{result},
+            handler_id = #{handlerId},
+            handler_name = (SELECT username FROM user WHERE id = #{handlerId}),
+            handle_time = NOW(),
+            update_time = NOW()
+        WHERE id = #{id}
+        AND deleted = 0
+    </update>
+
+    <!-- 查询待处理的举报数量 -->
+    <select id="selectPendingReportCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM report
+        WHERE status = 0
+        AND deleted = 0
+    </select>
+
+    <!-- 查询高优先级举报数量 -->
+    <select id="selectHighPriorityReportCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM report
+        WHERE priority IN (3, 4) -- 高优先级和紧急
+        AND status IN (0, 1) -- 待处理和处理中
+        AND deleted = 0
+    </select>
+
+</mapper>

@@ -30,33 +30,32 @@ spring:
   redis:
     enabled: false
 
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
 # 日志配置
 logging:
   level:
     com.beman: DEBUG
-    org.springframework.web: DEBUG
+    org.springframework.test: DEBUG
+    org.junit.jupiter: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
-# 测试特定配置
+# 测试专用配置
 test:
-  # 内容审核测试配置
-  content-audit:
-    # 测试关键词
-    test-keywords:
-      extreme: ["分手", "离婚", "绝交"]
-      sensitive: ["吵架", "生气", "失望"]
-    
-    # 性能测试配置
-    performance:
-      max-response-time: 1000  # 毫秒
-      max-iterations: 100
-    
-    # 建议模板测试
-    suggestion-templates:
-      breakup: ["分手是一个重大决定", "建议先尝试沟通"]
-      argument: ["吵架后冷静下来", "寻找问题根源"]
-      general: ["关系需要双方努力", "沟通是解决问题的关键"]
+  data:
+    init: true
+  mock:
+    enabled: true
 
 # 服务器配置
 server:

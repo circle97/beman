@@ -19,6 +19,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '社区' }
   },
   {
+    path: '/post/:id',
+    name: 'PostDetail',
+    component: () => import('../views/PostDetail.vue'),
+    meta: { title: '帖子详情' }
+  },
+  {
     path: '/tools',
     name: 'Tools',
     component: () => import('../views/Tools.vue'),
@@ -91,6 +97,12 @@ const routes: RouteRecordRaw[] = [
     name: 'TestReminder',
     component: () => import('../views/TestReminder.vue'),
     meta: { title: '提醒管理测试' }
+  },
+  {
+    path: '/report-management',
+    name: 'ReportManagement',
+    component: () => import('../views/ReportManagement.vue'),
+    meta: { title: '举报管理' }
   }
 ]
 

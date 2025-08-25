@@ -76,6 +76,21 @@
             </div>
           </div>
           <div class="post-actions">
+            <!-- 用户关注按钮 -->
+            <UserFollowButton 
+              :target-user-id="post.authorId"
+              :target-user-name="post.authorName"
+              class="follow-btn"
+            />
+            
+            <!-- 举报按钮 -->
+            <ReportButton 
+              :content-type="1"
+              :content-id="post.id"
+              :content-title="post.title"
+              class="report-btn"
+            />
+            
             <button class="action-btn" @click.stop="likePost(post)">
               <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -213,9 +228,15 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import BemanCard from '../components/BemanCard.vue'
+import UserFollowButton from '../components/UserFollowButton.vue'
+import ReportButton from '../components/ReportButton.vue'
 import { createPost, getPostPage, likePost as likePostApi, getHotTags, type Post, type PostCreateDTO } from '../api/post'
 import { auditAPI } from '../api/audit'
+
+// 路由
+const router = useRouter()
 
 // 响应式数据
 const loading = ref(false)
@@ -277,9 +298,8 @@ const formatTime = (timeStr: string) => {
   return date.toLocaleDateString()
 }
 
-const viewPost = (post: any) => {
-  console.log('查看帖子:', post)
-  // TODO: 跳转到帖子详情页
+const viewPost = (post: Post) => {
+  router.push(`/post/${post.id}`)
 }
 
 const likePost = async (post: Post) => {
@@ -613,6 +633,11 @@ onMounted(() => {
   .post-actions {
     display: flex;
     gap: $spacing-sm;
+    
+    .follow-btn,
+    .report-btn {
+      margin-right: $spacing-sm;
+    }
   }
   
   .action-btn {
